@@ -85,8 +85,8 @@
     { id: 'wrist_L', bone: 'hand_L', dofs: [['flex', 'z', -1, -70, 80], ['dev', 'x', -1, -30, 20]] },
     { id: 'hip_L', bone: 'thigh_L', dofs: [['flex', 'x', -1, -25, 125], ['abd', 'z', 1, -30, 50], ['rot', 'y', -1, -40, 45]] },
     { id: 'knee_L', bone: 'shin_L', dofs: [['flex', 'x', 1, 0, 145]] },
-    { id: 'ankle_L', bone: 'foot_L', dofs: [['dorsi', 'x', -1, -50, 25], ['inv', 'z', -1, -20, 30]] },
-    { id: 'toe_L', bone: 'toes_L', dofs: [['ext', 'x', -1, -30, 70]] },
+    { id: 'ankle_L', bone: 'foot_L', dofs: [['dorsi', 'x', -1, -50, 30], ['inv', 'z', -1, -20, 30]] },
+    { id: 'toe_L', bone: 'toes_L', dofs: [['ext', 'x', -1, -30, 80]] },
   ];
   function mirrorJoint(j) {
     return {
