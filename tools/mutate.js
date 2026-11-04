@@ -75,6 +75,7 @@ const MUTANTS = [
   { id: 'page-lang-title', file: 'web/js/app/app.js', from: "    document.title = I.t('title');\n", to: '', web: 'язык' },
   { id: 'page-scrub-ignored', file: 'web/js/app/app.js', from: '    player.time = (Number(scrub.value) / 1000) * player.mv.dur;', to: '', web: 'пауза, скорость' },
   { id: 'page-narrow-menu', file: 'web/css/style.css', from: '  #moves { order: 3; flex-basis: 100%; flex-wrap: nowrap; overflow-x: auto;', to: '  #moves { order: 3; flex-basis: 100%; flex-wrap: wrap;', web: 'узкое окно' },
+  { id: 'page-pose-cache-grows', file: 'web/js/app/app.js', from: 'if (!poseAn || poseAn.version !== customVersion) poseAn =', to: 'if (!poseAn || poseAn.version !== customVersion) cache.set(customVersion, 1), poseAn =', web: 'своя поза' },
   { id: 'page-no-webgl-crash', file: 'web/js/app/app.js', from: "    GB.app = { state: () => ({ error: 'webgl' }) };\n    return;", to: '    throw e;', web: 'без WebGL' },
   { id: 'page-kick-ball-hidden', file: 'web/js/app/app.js', from: '      ball.visible = ph < pr.hit + 0.3 || ph > 0.95;', to: '      ball.visible = false;', web: 'предметы' },
   { id: 'page-bar-hidden', file: 'web/js/app/app.js', from: '    barGroup.visible = !!(mv && mv.hang);', to: '    barGroup.visible = false;', web: 'предметы' },

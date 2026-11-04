@@ -115,6 +115,14 @@ test('своя поза: тянем кисть мышью - она идёт за
   expect(Math.hypot(r.screen[0] - (s[0] - 60), r.screen[1] - (s[1] - 140)), 'кисть под мышью').toBeLessThan(25);
   expect(r.bad).toEqual([]);
   expect(r.low).toBeGreaterThan(-0.005);
+  // долгое перетаскивание не копит в памяти нагрузку каждой промежуточной позы
+  const size0 = await page.evaluate(() => GB.app.cacheSize());
+  const h = await page.evaluate(() => GB.app.screenOf(GB.app.effector('hand_R')));
+  await page.mouse.move(h[0], h[1]);
+  await page.mouse.down();
+  for (let k = 1; k <= 40; k++) { await page.mouse.move(h[0] + 3 * k, h[1] - 3 * k); await page.evaluate(() => GB.app.tick(0)); }
+  await page.mouse.up();
+  expect(await page.evaluate(() => GB.app.cacheSize())).toBeLessThanOrEqual(size0 + 1);
   await page.click('#pose-reset');
   const reset = await page.evaluate(() => { GB.app.tick(0); return GB.app.pose().a.every((x) => x === 0); });
   expect(reset).toBe(true);

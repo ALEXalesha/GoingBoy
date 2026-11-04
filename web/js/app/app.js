@@ -140,11 +140,12 @@
   // ---------------- нагрузка: кэш по фазе цикла ----------------
   const BINS = 240;
   const cache = new Map();
+  let poseAn = null;
   function analysisFor(pose) {
     if (mode === 'pose') {
-      const key = 'pose:' + customVersion;
-      if (!cache.has(key)) cache.set(key, Ld.analyze({ prev: custom, pose: custom, next: custom, h: 0.03 }));
-      return cache.get(key);
+      // своя поза меняется на каждом движении мыши - храним нагрузку только последней
+      if (!poseAn || poseAn.version !== customVersion) poseAn = { version: customVersion, an: Ld.analyze({ prev: custom, pose: custom, next: custom, h: 0.03 }) };
+      return poseAn.an;
     }
     const mv = player.mv;
     const bin = ((Math.round((player.time / mv.dur) * BINS) % BINS) + BINS) % BINS;
@@ -654,6 +655,7 @@
     effector: (name) => IK.effector(mode === 'pose' ? custom : currentPose, name),
     pose: () => ({ root: currentPose.root, a: [...currentPose.a] }),
     analysis: () => currentAn,
+    cacheSize: () => cache.size,
     activation: (id) => currentAn.act[M.MUSCLE[id]],
     frameF: () => currentF,
     ballVisible: () => ball.visible,
