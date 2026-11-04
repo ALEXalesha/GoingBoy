@@ -40,6 +40,9 @@ async function freeze(p, move, ph, extra) {
     { file: 'pullup-light.png', opt: { theme: 'light' }, move: 'pullup', ph: 0.42 },
     { file: 'pushup-warm.png', opt: { theme: 'warm' }, move: 'pushup', ph: 0.5, extra: 'GB.app.setCamera({ az: 1.25, el: 0.25 })' },
     { file: 'flip-night.png', opt: { theme: 'night' }, move: 'flip', ph: 0.43, extra: 'GB.app.setCamera({ az: 1.5 })' },
+    { file: 'climb.png', opt: {}, move: 'climb', ph: 0.3, extra: 'GB.app.setCamera({ az: 0.9, el: 0.1 })' },
+    { file: 'swim.png', opt: { theme: 'light' }, move: 'swim', ph: 0.3, extra: 'GB.app.setCamera({ az: 1.2, el: 0.35 })' },
+    { file: 'crawl.png', opt: { theme: 'warm', layers: { skin: true, muscles: true, bones: false } }, move: 'crawl', ph: 0.1, extra: 'GB.app.setCamera({ az: 1.3, el: 0.2 })' },
     { file: 'kick-formal.png', opt: { theme: 'formal', layers: { skin: false, muscles: true, bones: true } }, move: 'kick', ph: 0.37, extra: 'GB.app.setCamera({ az: 1.1 })' },
   ];
   for (const s of shots) {
@@ -64,6 +67,14 @@ async function freeze(p, move, ph, extra) {
     await p.screenshot({ path: path.join(OUT, 'pose.png') });
     await p.close();
     console.log('pose.png');
+  }
+  // за курсором: игрушка у пола в стороне - ползёт к ней
+  {
+    const p = await page(b, {});
+    await p.evaluate(() => { GB.app.setMove('follow'); GB.app.setToy([1.6, 0.18, 1.8]); for (let i = 0; i < 110; i++) GB.app.tick(1 / 30); });
+    await p.screenshot({ path: path.join(OUT, 'follow.png') });
+    await p.close();
+    console.log('follow.png');
   }
   // телефон
   {

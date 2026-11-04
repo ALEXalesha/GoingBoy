@@ -18,13 +18,23 @@ anatomy of movement, in the browser and as a desktop app.
 | --- | --- | --- |
 | ![Squat](docs/screens/squat-hover.png) | ![Pull-up](docs/screens/pullup-light.png) | ![Pose](docs/screens/pose.png) |
 
+| Climbing a ladder | Front crawl swim | Crawling | Follow the cursor |
+| --- | --- | --- | --- |
+| ![Climb](docs/screens/climb.png) | ![Swim](docs/screens/swim.png) | ![Crawl](docs/screens/crawl.png) | ![Follow](docs/screens/follow.png) |
+
 | Push-up, warm theme | Back flip, night theme | Kick, formal theme | Phone |
 | --- | --- | --- | --- |
 | ![Push-up](docs/screens/pushup-warm.png) | ![Flip](docs/screens/flip-night.png) | ![Kick](docs/screens/kick-formal.png) | ![Phone](docs/screens/phone.png) |
 
 ## What it shows
 
-- **11 movements:** walk, run, jump; squat, push-up, pull-up, lunge; kick, throw, back flip, dance.
+- **14 movements:** walk, run, jump, crawl on all fours, climb a ladder, front crawl swim; squat,
+  push-up, pull-up, lunge; kick, throw, back flip, dance.
+- **Follow the cursor:** the cursor is a toy. Far away - he walks to it (runs if very far), near
+  the floor - crawls to it; close - reaches for it, squats for a low one, jumps for a high one.
+- **Water and ladder physics:** in water buoyancy carries the weight and drag pushes back, so the
+  stroke itself pulls him forward and lights up the latissimus and triceps; on the ladder the
+  hands hold the rungs and the feet only push on them.
 - **Your own pose:** drag a hand, a foot or the head - the limb follows by inverse kinematics,
   joints never bend past their limits, nothing goes into the floor.
 - **Layers:** skin, muscles, bones - any combination.
@@ -46,6 +56,7 @@ anatomy of movement, in the browser and as a desktop app.
 | Pause / play | Space or the button |
 | One frame back / forward (paused) | ← → |
 | Your pose | "Your pose", then drag the blue balls |
+| Follow the cursor | "Follow the cursor", then move the mouse (on a phone - drag a finger) |
 
 ## Run
 
@@ -64,7 +75,7 @@ xvfb-run -a npm run test:app   # the Electron app, 20 launches without memory gr
 npm run mutate           # mutants: every law must catch its own breakage
 ```
 
-Laws are checked on every frame of every movement: joint angles within anatomy, bone lengths
+Laws are checked on every frame of every movement and over 40 s of a random toy in the follow mode: joint angles within anatomy, bone lengths
 constant, nothing under the floor, support feet do not slide, the body is balanced in static
 moves, the centre of mass flies on a parabola in the air, each muscle's lever arm agrees with
 what its label says, the glow agrees with the joint torque, labels never overlap each other or
