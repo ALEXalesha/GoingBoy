@@ -22,6 +22,7 @@
     pose: ['Своя поза', 'Your pose'],
     pose_hint: ['Тяните за шарики на кистях, стопах и голове - тело подстроится', 'Drag the balls on the hands, feet and head - the body follows'],
     pose_reset: ['Сбросить позу', 'Reset pose'],
+    follow_hint: ['Водите курсором: далеко - идёт к игрушке, низко - ползёт, рядом - тянется, высоко - прыгает', 'Move the cursor: far - he walks to the toy, low - crawls, near - reaches, high - jumps'],
     layers: ['Слои', 'Layers'], skin: ['Кожа', 'Skin'], muscles: ['Мышцы', 'Muscles'], bones: ['Кости', 'Bones'],
     labels: ['Подписи', 'Labels'], angles: ['Углы', 'Angles'],
     play: ['Пуск', 'Play'], pause: ['Пауза', 'Pause'], speed: ['Скорость', 'Speed'],

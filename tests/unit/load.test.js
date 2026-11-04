@@ -202,3 +202,17 @@ test('кроль: вода держит тело, гребок даёт тягу
   const still = Ld.analyze({ prev: p, pose: p, next: p, h: 0.03, env: { water: { level: 1.2, flow: 0 }, floor: false } });
   assert.ok(Math.max(...still.act) < 0.05, 'лежит на воде без усилия');
 });
+
+test('лазанье: кисти держат перекладины, стопы на них давят и несут часть веса', () => {
+  const mv = compiled.find((m) => m.id === 'climb');
+  for (const ph of [0.05, 0.3, 0.55, 0.8]) {
+    const r = Ld.analyzeAt((t) => A.at(mv, t), ph * mv.dur, 0.03, A.envAt(mv, ph));
+    const feet = r.contacts.filter((c) => /^(foot|toes)/.test(S.BONES[c.bone].name));
+    const hands = r.contacts.filter((c) => /^hand/.test(S.BONES[c.bone].name));
+    assert.ok(hands.length >= 1 && feet.length >= 1, `фаза ${ph}: опоры ${hands.length} кисти, ${feet.length} стопы`);
+    const footLoad = feet.reduce((s, c) => s + c.force[1], 0);
+    assert.ok(footLoad > 0.2 * W, `фаза ${ph}: стопы несут ${footLoad.toFixed(0)} Н`);
+    for (const c of feet) assert.ok(c.force[1] >= -1e-9, 'стопа только давит');
+    assert.ok(r.contacts.every((c) => c.point[1] > 0.3), 'пола на лестнице нет');
+  }
+});

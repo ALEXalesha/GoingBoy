@@ -3,11 +3,11 @@
 const { test, expect } = require('@playwright/test');
 const { open, freeze, overlap } = require('./helpers');
 
-const MOVES = ['walk', 'run', 'jump', 'squat', 'pushup', 'pullup', 'lunge', 'kick', 'throw', 'flip', 'dance'];
+const MOVES = ['walk', 'run', 'jump', 'crawl', 'climb', 'swim', 'squat', 'pushup', 'pullup', 'lunge', 'kick', 'throw', 'flip', 'dance'];
 
 test('страница: открывается без ошибок, все движения и своя поза играют', async ({ page }) => {
   const errors = await open(page);
-  for (const id of [...MOVES, 'pose']) {
+  for (const id of [...MOVES, 'pose', 'follow']) {
     const ok = await page.evaluate((m) => {
       GB.app.setMove(m);
       for (let i = 0; i < 20; i++) GB.app.tick(1 / 30);
@@ -17,7 +17,7 @@ test('страница: открывается без ошибок, все дв�
     expect(ok, id).toBe(true);
   }
   expect(errors).toEqual([]);
-  await expect(page.locator('#moves button')).toHaveCount(12);
+  await expect(page.locator('#moves button')).toHaveCount(16);
 });
 
 test('слои: кожа, мышцы, кости переключаются кнопками; пустой сцены не бывает', async ({ page }) => {
@@ -253,6 +253,10 @@ test('предметы: мяч у удара и броска, переклади
   expect(await vis('throw', 0.3)).toEqual({ ball: true, bar: false });
   expect(await vis('pullup', 0.3)).toEqual({ ball: false, bar: true });
   expect(await vis('walk', 0.3)).toEqual({ ball: false, bar: false });
+  const env = (m) => page.evaluate((mm) => { GB.app.setMove(mm); GB.app.tick(0); return { ladder: GB.app.ladderVisible(), water: GB.app.waterVisible() }; }, m);
+  expect(await env('climb')).toEqual({ ladder: true, water: false });
+  expect(await env('swim')).toEqual({ ladder: false, water: true });
+  expect(await env('walk')).toEqual({ ladder: false, water: false });
 });
 
 test('без WebGL: понятное сообщение вместо падения', async ({ browser }) => {
@@ -266,4 +270,27 @@ test('без WebGL: понятное сообщение вместо паден�
   expect(await page.evaluate(() => GB.app.state().error)).toBe('webgl');
   expect(errors).toEqual([]);
   await ctx.close();
+});
+
+test('за курсором: игрушка под курсором, человечек идёт к ней, к низкой ползёт', async ({ page }) => {
+  const errors = await open(page);
+  await page.click('#moves [data-move="follow"]');
+  await expect(page.locator('#follow-bar')).toBeVisible();
+  const box = await page.locator('#view').boundingBox();
+  // курсор у правого края сцены, на высоте груди
+  await page.mouse.move(box.x + box.width * 0.9, box.y + box.height * 0.45);
+  const toy = await page.evaluate(() => GB.app.toy());
+  const scr = await page.evaluate((t) => GB.app.screenOf(t), toy);
+  expect(Math.hypot(scr[0] - (box.x + box.width * 0.9), scr[1] - (box.y + box.height * 0.45)), 'игрушка под курсором').toBeLessThan(3);
+  const dist = () => page.evaluate(() => { const f = GB.app.follow(), t = GB.app.toy(); return Math.hypot(f.pos[0] - t[0], f.pos[1] - t[2]); });
+  const d0 = await dist();
+  await page.evaluate(() => { for (let i = 0; i < 90; i++) GB.app.tick(1 / 30); });
+  expect(await dist(), 'подошёл к игрушке').toBeLessThan(Math.max(0.75, d0 - 0.5));
+  // игрушка у самого пола и подальше - ползёт или на четвереньках
+  await page.evaluate(() => { const f = GB.app.follow(); GB.app.setToy([f.pos[0] + 2.5, 0.15, f.pos[1]]); for (let i = 0; i < 60; i++) GB.app.tick(1 / 30); });
+  expect(['crawl', 'kneel']).toContain((await page.evaluate(() => GB.app.follow())).mode);
+  // и назад к обычным движениям
+  await page.click('#moves [data-move="walk"]');
+  await expect(page.locator('#follow-bar')).toBeHidden();
+  expect(errors).toEqual([]);
 });

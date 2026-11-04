@@ -32,6 +32,7 @@ try { var t = JSON.parse(localStorage.getItem('goingboy:settings') || '{}').them
       <span data-i18n="pose_hint"></span>
       <button id="pose-reset" data-i18n="pose_reset"></button>
     </div>
+    <div id="follow-bar" hidden><span data-i18n="follow_hint"></span></div>
     <div id="cam-hint" data-i18n="camera_hint"></div>
   </main>
 
@@ -85,6 +86,7 @@ try { var t = JSON.parse(localStorage.getItem('goingboy:settings') || '{}').them
 <script src="js/core/labels.js"></script>
 <script src="js/core/i18n.js"></script>
 <script src="js/core/themes.js"></script>
+<script src="js/core/follow.js"></script>
 <script src="js/body/procedural.js"></script>
 <script src="js/app/app.js"></script>
 </body>

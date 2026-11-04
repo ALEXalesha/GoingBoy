@@ -36,7 +36,7 @@ const MUTANTS = [
   { id: 'mirror-signs-same', file: 'web/js/body/skeleton.js', from: "dofs: j.dofs.map(([n, ax, s, lo, hi]) => [n, ax, ax === 'x' ? s : -s, lo, hi]),", to: 'dofs: j.dofs.map(([n, ax, s, lo, hi]) => [n, ax, s, lo, hi]),', unit: 'зеркало|знаки углов' },
   { id: 'bones-stretch', file: 'web/js/core/kinematics.js', from: 'pos[b] = V.add(pos[par], V.qRot(rot[par], S.BONES[b].offset));', to: 'pos[b] = V.add(pos[par], V.scale(V.qRot(rot[par], S.BONES[b].offset), 1 + 0.002 * p.a[0]));', unit: 'длины костей|длины' },
   { id: 'knee-hyperextends', file: 'web/js/body/skeleton.js', from: "['flex', 'x', 1, 0, 145]", to: "['flex', 'x', 1, -15, 145]", unit: 'пределы' },
-  { id: 'blend-long-arc', file: 'web/js/core/kinematics.js', from: 'q.root.rot = p0.root.rot.map((r, k) => r + V.wrapDeg(p1.root.rot[k] - r) * w);', to: 'q.root.rot = p0.root.rot.map((r, k) => r + (p1.root.rot[k] - r) * w);', unit: 'смешивание' },
+  { id: 'blend-long-arc', file: 'web/js/core/kinematics.js', from: 'return r + V.wrapDeg((p1.root.rot[k] || 0) - r) * w;', to: 'return r + ((p1.root.rot[k] || 0) - r) * w;', unit: 'смешивание' },
   // ---------- анимация ----------
   { id: 'spline-overshoots', file: 'web/js/core/anim.js', from: 'm[k] = d0 * d1 > 0 ? 3 * (h0 + h1) / ((2 * h1 + h0) / d0 + (h1 + 2 * h0) / d1) : 0;', to: 'm[k] = (y[k + 1] - y[k - 1]) / (h0 + h1);', unit: 'сплайн|пределах' },
   { id: 'no-ground', file: 'web/js/core/anim.js', from: '      if (mv.ground) p.root.pos[1] -= K.lowest(K.fk(p), mv.ground);', to: '', unit: 'под пол' },
@@ -62,6 +62,21 @@ const MUTANTS = [
   { id: 'labels-band-break', file: 'web/js/core/labels.js', from: "if (l.w > x1 - x0 || y + l.h > y1) { left.push(l); continue; }", to: "if (l.w > x1 - x0 || y + l.h > y1) { left.push(l); break; }", unit: 'высокая подпись' },
   { id: 'labels-one-band', file: 'web/js/core/labels.js', from: 'for (const bandArea of order) {', to: 'for (const bandArea of order.slice(0, 1)) {', unit: 'полосу снизу' },
   { id: 'labels-drop-important', file: 'web/js/core/labels.js', from: 'if (l.priority < list[worst].priority) worst = i;', to: 'if (l.priority > list[worst].priority) worst = i;', unit: 'наименее важные' },
+  // ---------- v1.2: вода, лестница, кисти по IK, вращение, режим «за курсором» ----------
+  { id: 'water-no-buoyancy', file: 'web/js/core/load.js', from: "        F = V.add(F, [0, m * 9.81, 0]);                    // выталкивание\n", to: '', unit: 'вода держит тело' },
+  { id: 'water-drag-pushes', file: 'web/js/core/load.js', from: 'F = V.add(F, V.scale(rel, -DRAG_K * areaOf(S.BONES[b].name) * V.len(rel)));', to: 'F = V.add(F, V.scale(rel, DRAG_K * areaOf(S.BONES[b].name) * V.len(rel)));', unit: 'вода держит тело' },
+  { id: 'feet-not-on-rungs', file: 'web/js/core/load.js', from: '        if (FEET.includes(c.bone)) {', to: '        if (false) {', unit: 'стопы на них давят' },
+  { id: 'hand-ik-off', file: 'web/js/core/anim.js', from: '      for (const i of ARM_DOFS[s]) p.a[i] += (q.a[i] - p.a[i]) * w;', to: '', unit: 'держатся за перекладины' },
+  { id: 'ladder-still', file: 'web/js/core/anim.js', from: 'const shift = ((((ph % 1) + 1) % 1) * lad.climb) % lad.spacing;', to: 'const shift = 0;', unit: 'держатся за перекладины' },
+  { id: 'spin-ignored', file: 'web/js/core/kinematics.js', from: 'V.qAxis(V.AXES.y, (p.root.rot[3] || 0) * V.DEG)', to: 'V.QI', unit: 'смешивание' },
+  { id: 'crawl-no-level', file: 'web/js/core/moves.js', from: "      level: [['hand_L', 'hand_R'], ['shin_L', 'shin_R', 'foot_L', 'toes_L', 'foot_R', 'toes_R']],", to: '', unit: 'crawl: все опоры' },
+  { id: 'follow-no-hysteresis', file: 'web/js/core/follow.js', from: "if (h < C.SQUAT + (m === 'squat' ? C.HYST : 0)) return 'squat';", to: "if (h < C.SQUAT) return 'squat';", unit: 'не дёргается' },
+  { id: 'follow-no-turn', file: 'web/js/core/follow.js', from: "if (st.mode !== 'jump' && st.mode !== 'kneel') st.yaw =", to: "if (false) st.yaw =", unit: 'бежит' },
+  { id: 'follow-never-crawls', file: 'web/js/core/follow.js', from: "      if (low) return 'crawl';\n", to: '', unit: 'ползёт к ней' },
+  { id: 'follow-no-reach', file: 'web/js/core/follow.js', from: '    return IK.drag(p, hand, target, 30).pose;', to: '    return p;', unit: 'достаёт рукой' },
+  { id: 'follow-no-blend', file: 'web/js/core/follow.js', from: '      p = K.blend(st.from, p, w * w * (3 - 2 * w));', to: '', unit: 'случайная игрушка' },
+  { id: 'page-toy-not-aimed', file: 'web/js/app/app.js', from: "    if (mode === 'follow') aimToy(e.clientX, e.clientY);", to: '', web: 'за курсором' },
+  { id: 'page-ladder-hidden', file: 'web/js/app/app.js', from: '    ladder.visible = !!(mv && mv.def.ladder);', to: '    ladder.visible = false;', web: 'предметы' },
   // ---------- окно программы ----------
   { id: 'window-off-screen', file: 'electron/window-state.js', from: 'const ny = Math.max(best.y, Math.min(y, best.y + best.height - height));', to: 'const ny = y;', unit: 'окно:' },
   // ---------- страница ----------

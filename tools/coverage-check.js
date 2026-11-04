@@ -7,7 +7,7 @@ const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
 const sum = JSON.parse(fs.readFileSync(path.join(ROOT, 'coverage', 'coverage-summary.json'), 'utf8'));
-const CORE = ['body/skeleton.js', 'body/muscles.js', 'core/kinematics.js', 'core/anim.js', 'core/moves.js', 'core/limb.js', 'core/ik.js', 'core/load.js', 'body/retarget.js'];
+const CORE = ['body/skeleton.js', 'body/muscles.js', 'core/kinematics.js', 'core/anim.js', 'core/moves.js', 'core/limb.js', 'core/ik.js', 'core/load.js', 'core/follow.js', 'body/retarget.js'];
 const files = Object.keys(sum).filter((k) => k !== 'total');
 const group = (list) => {
   let covered = 0, total = 0;

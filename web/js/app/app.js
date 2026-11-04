@@ -4,7 +4,7 @@
 (function () {
   'use strict';
   const GB = window.GB;
-  const { Vec: V, Skeleton: S, Muscles: M, Kin: K, Anim: A, IK, Load: Ld, Labels: Lb, I18n: I, Themes: T, BodyView } = GB;
+  const { Vec: V, Skeleton: S, Muscles: M, Kin: K, Anim: A, IK, Load: Ld, Labels: Lb, I18n: I, Themes: T, BodyView, Follow: Fw } = GB;
   const THREE = window.THREE;
   const $ = (id) => document.getElementById(id);
 
@@ -27,7 +27,10 @@
   const MOVE = Object.fromEntries(MOVES.map((m) => [m.id, m]));
   const player = A.createPlayer();
   player.speed = settings.speed;
-  let mode = 'move';                 // 'move' | 'pose'
+  let mode = 'move';                 // 'move' | 'pose' | 'follow'
+  let fst = null;                    // состояние режима «за курсором»
+  const toy = [0, 1.3, 1.5];         // игрушка: точка, к которой он тянется
+  let fHist = [], followAn = null;   // последние позы режима - для нагрузки
   let custom = K.restPose();         // своя поза
   let customVersion = 0;
 
@@ -99,6 +102,39 @@
   }
   scene.add(barGroup);
 
+  // лестница: две тетивы и перекладины (перекладины едут вниз, когда он лезет)
+  const ladder = new THREE.Group();
+  const wood = new THREE.MeshStandardMaterial({ color: 0xb08a5a, roughness: 0.8 });
+  for (const x of [-0.34, 0.34]) {
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(0.05, 3.4, 0.05), wood);
+    rail.position.set(x, 1.7, 0);
+    ladder.add(rail);
+  }
+  const rungs = Array.from({ length: 12 }, () => {
+    const r = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.68, 12), steel);
+    r.rotation.z = Math.PI / 2;
+    ladder.add(r);
+    return r;
+  });
+  ladder.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  scene.add(ladder);
+
+  // вода бассейна: прозрачная толща и чуть светлее поверхность
+  const water = new THREE.Group();
+  const waterBody = new THREE.Mesh(new THREE.BoxGeometry(8, 1, 8), new THREE.MeshStandardMaterial({ color: 0x2a7fd4, transparent: true, opacity: 0.22, depthWrite: false, roughness: 0.2 }));
+  waterBody.position.y = 0.5;
+  waterBody.renderOrder = 3;
+  const surface = new THREE.Mesh(new THREE.PlaneGeometry(8, 8, 1, 1), new THREE.MeshStandardMaterial({ color: 0x8fd0ff, transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide }));
+  surface.rotation.x = -Math.PI / 2;
+  surface.renderOrder = 4;
+  water.add(waterBody, surface);
+  scene.add(water);
+
+  // игрушка режима «за курсором»
+  const toyMesh = new THREE.Mesh(new THREE.SphereGeometry(0.06, 20, 14), new THREE.MeshStandardMaterial({ color: 0xffc23d, emissive: 0xff8a00, emissiveIntensity: 0.8 }));
+  toyMesh.castShadow = true;
+  scene.add(toyMesh);
+
   // дуги углов на суставах
   const ARC_JOINTS = ['knee_L', 'knee_R', 'elbow_L', 'elbow_R', 'hip_L', 'hip_R', 'shoulder_L', 'shoulder_R'];
   const arcMat = new THREE.LineBasicMaterial({ color: 0xffd34d, transparent: true, opacity: 0.95, depthTest: false });
@@ -142,6 +178,7 @@
   const cache = new Map();
   let poseAn = null;
   function analysisFor(pose) {
+    if (mode === 'follow') return followAn || Ld.analyze({ prev: pose, pose, next: pose, h: 0.03 });
     if (mode === 'pose') {
       // своя поза меняется на каждом движении мыши - храним нагрузку только последней
       if (!poseAn || poseAn.version !== customVersion) poseAn = { version: customVersion, an: Ld.analyze({ prev: custom, pose: custom, next: custom, h: 0.03 }) };
@@ -186,6 +223,7 @@
     const box = document.createElement('div');
     box.className = 'group';
     box.appendChild(moveButton('pose'));
+    box.appendChild(moveButton('follow'));
     nav.appendChild(box);
   }
   function moveButton(id) {
@@ -196,7 +234,7 @@
     b.onclick = () => setMove(id);
     return b;
   }
-  const current = () => (mode === 'pose' ? 'pose' : player.mv ? player.mv.id : null);
+  const current = () => (mode !== 'move' ? mode : player.mv ? player.mv.id : null);
 
   function buildThemes() {
     const sel = $('theme');
@@ -225,15 +263,30 @@
 
   // ---------------- управление ----------------
   function setMove(id) {
-    if (id === 'pose') {
-      if (mode !== 'pose') custom = K.clone(A.current(player));
+    const now = mode === 'follow' && fst ? fst.last : mode === 'pose' ? custom : A.current(player);
+    if (id === 'follow') {
+      if (mode !== 'follow') {
+        // начинает там, где стоит, игрушка - перед ним
+        fst = Fw.create();
+        fst.pos = [now.root.pos[0], now.root.pos[2]];
+        fst.yaw = now.root.rot[0];
+        fst.last = K.clone(now);
+        fst.from = K.clone(now);
+        fst.fade = 0;
+        const yaw = fst.yaw * V.DEG;
+        toy[0] = fst.pos[0] + Math.sin(yaw) * 1.6; toy[1] = 1.3; toy[2] = fst.pos[1] + Math.cos(yaw) * 1.6;
+        fHist = []; followAn = null;
+      }
+      mode = 'follow';
+    } else if (id === 'pose') {
+      if (mode !== 'pose') custom = K.clone(now);
       // своя поза стоит на полу
       custom.root.pos[1] -= K.lowest(K.fk(custom));
       customVersion++;
       mode = 'pose';
     } else {
       if (!MOVE[id]) return;
-      if (mode === 'pose') { A.play(player, null, custom); }
+      if (mode !== 'move') { A.play(player, null, now); }
       mode = 'move';
       A.play(player, MOVE[id]);
       settings.move = id;
@@ -241,6 +294,7 @@
     }
     for (const b of document.querySelectorAll('#moves button')) b.classList.toggle('on', b.dataset.move === id);
     $('pose-bar').hidden = mode !== 'pose';
+    $('follow-bar').hidden = mode !== 'follow';
     for (const h of handles) h.visible = mode === 'pose';
     updatePlay();
   }
@@ -249,6 +303,7 @@
     const b = $('play');
     b.textContent = player.paused ? '▶ ' + I.t('play') : '❚❚ ' + I.t('pause');
     b.disabled = mode === 'pose';
+    toyMesh.visible = mode === 'follow';
     for (const x of document.querySelectorAll('#speed button')) x.classList.toggle('on', Number(x.dataset.speed) === player.speed);
   }
   function setPaused(p) { player.paused = p; updatePlay(); }
@@ -327,8 +382,26 @@
     return hit ? hit.object.userData.handle : null;
   }
 
+  /**
+   * Игрушка - там, где курсор: на вертикальной плоскости, повёрнутой к камере и проходящей
+   * через человечка. Выше пола и не дальше 8 м.
+   */
+  function aimToy(x, y) {
+    toNdc(x, y);
+    const dir = camera.getWorldDirection(new THREE.Vector3());
+    dir.y = 0;
+    if (dir.lengthSq() < 1e-6) return;
+    dir.normalize();
+    const at = new THREE.Vector3(fst.pos[0], 1, fst.pos[1]);
+    const hit = new THREE.Vector3();
+    if (!ray.ray.intersectPlane(new THREE.Plane().setFromNormalAndCoplanarPoint(dir, at), hit)) return;
+    const dx = hit.x - fst.pos[0], dz = hit.z - fst.pos[1], d = Math.hypot(dx, dz), k = d > 8 ? 8 / d : 1;
+    toy[0] = fst.pos[0] + dx * k; toy[1] = Math.max(0.08, Math.min(3, hit.y)); toy[2] = fst.pos[1] + dz * k;
+  }
+
   canvas.addEventListener('pointerdown', (e) => {
     canvas.setPointerCapture(e.pointerId);
+    if (mode === 'follow' && e.pointerType === 'touch') { aimToy(e.clientX, e.clientY); drag = { type: 'aim' }; return; }
     pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     const h = pickHandle(e.clientX, e.clientY);
     if (h) {
@@ -350,6 +423,7 @@
       drag = { type: 'pinch', pinch: d };
       return;
     }
+    if (drag && drag.type === 'aim') { aimToy(e.clientX, e.clientY); return; }
     if (drag && drag.type === 'orbit') {
       cam.az -= (e.clientX - drag.x) * 0.008;
       cam.el += (e.clientY - drag.y) * 0.006;
@@ -365,6 +439,7 @@
       }
       return;
     }
+    if (mode === 'follow') aimToy(e.clientX, e.clientY);
     const info = pick(e.clientX, e.clientY);
     if (JSON.stringify(info) !== JSON.stringify(hover)) { hover = info; body.setHover(hover); }
     canvas.style.cursor = pickHandle(e.clientX, e.clientY) ? 'grab' : info ? 'help' : 'default';
@@ -505,6 +580,20 @@
   // ---------------- предметы ----------------
   function updateProps(pose, f) {
     const mv = mode === 'move' ? player.mv : null;
+    const ph = mv ? ((player.time / mv.dur) % 1 + 1) % 1 : 0;
+    ladder.visible = !!(mv && mv.def.ladder);
+    if (ladder.visible) {
+      const bars = A.envAt(mv, ph).bars;
+      const z = mv.def.ladder.z;
+      ladder.position.z = z;
+      rungs.forEach((r, k) => { r.visible = k < bars.length; if (r.visible) r.position.set(0, bars[k].y, 0); });
+    }
+    water.visible = !!(mv && mv.def.water);
+    if (water.visible) {
+      const lv = mv.def.water.level;
+      waterBody.scale.y = lv; waterBody.position.y = lv / 2; surface.position.y = lv;
+    }
+    toyMesh.position.set(toy[0], toy[1], toy[2]);
     barGroup.visible = !!(mv && mv.hang);
     if (barGroup.visible) {
       const [x, y, z] = mv.hang.bar;
@@ -514,7 +603,6 @@
     const pr = mv && mv.def.props && mv.def.props.ball;
     ball.visible = !!pr;
     if (!pr) return;
-    const ph = ((player.time / mv.dur) % 1 + 1) % 1;
     if (pr.hit !== undefined) {
       // удар: мяч лежит у носка в момент удара, после удара летит
       if (!mv.cache.ball) {
@@ -592,7 +680,22 @@
 
   function tick(dt) {
     if (mode === 'move') A.step(player, dt);
-    const pose = mode === 'pose' ? custom : A.current(player);
+    let pose;
+    if (mode === 'follow') {
+      const d = player.paused ? 0 : dt * player.speed;
+      pose = d > 0 ? Fw.step(fst, toy, d) : fst.last;
+      if (d > 0) {
+        // нагрузка - по трём последним кадрам; подсветка сглажена, чтобы не мерцала
+        fHist.push({ p: pose, dt: d });
+        if (fHist.length > 3) fHist.shift();
+        if (fHist.length === 3) {
+          const h = (fHist[1].dt + fHist[2].dt) / 2;
+          const an = Ld.analyze({ prev: fHist[0].p, pose: fHist[1].p, next: fHist[2].p, h });
+          if (followAn) for (let i = 0; i < an.act.length; i++) an.act[i] = followAn.act[i] * 0.7 + an.act[i] * 0.3;
+          followAn = an;
+        }
+      }
+    } else pose = mode === 'pose' ? custom : A.current(player);
     currentPose = pose;
     const f = K.fk(pose);
     currentF = f;
@@ -653,6 +756,11 @@
     view: sizeOf,
     screenOf: (p) => { const s = toScreen(p); const r = canvas.getBoundingClientRect(); return [s[0] + r.left, s[1] + r.top]; },
     effector: (name) => IK.effector(mode === 'pose' ? custom : currentPose, name),
+    toy: () => toy.slice(),
+    setToy: (p) => { toy[0] = p[0]; toy[1] = p[1]; toy[2] = p[2]; },
+    follow: () => (fst ? { mode: fst.mode, pos: fst.pos.slice(), yaw: fst.yaw } : null),
+    ladderVisible: () => ladder.visible,
+    waterVisible: () => water.visible,
     pose: () => ({ root: currentPose.root, a: [...currentPose.a] }),
     analysis: () => currentAn,
     cacheSize: () => cache.size,
