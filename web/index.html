@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GoingBoy</title>
+<meta name="description" content="GoingBoy: a stylized figure walks, runs, squats, flips or dances and shows which joints, bones and muscles do the work.">
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="css/style.css">
+<script>
+// Тема до первого кадра: окно не мигает чужими цветами
+try { var t = JSON.parse(localStorage.getItem('goingboy:settings') || '{}').theme; if (t && t !== 'glass') document.documentElement.setAttribute('data-theme', t); } catch (e) { /* без хранилища - стеклянная */ }
+</script>
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <div class="brand"><span class="logo" aria-hidden="true"></span><span data-i18n="app">GoingBoy</span></div>
+    <nav id="moves" aria-label="moves"></nav>
+    <div class="top-right">
+      <label class="sel"><span data-i18n="theme">Тема</span> <select id="theme"></select></label>
+      <div class="seg" id="lang" role="group"><button data-lang="ru">RU</button><button data-lang="en">EN</button></div>
+      <button id="panel-toggle" class="icon" aria-label="info">i</button>
+    </div>
+  </header>
+
+  <main id="stage">
+    <canvas id="view"></canvas>
+    <svg id="leaders" aria-hidden="true"></svg>
+    <div id="labels"></div>
+    <div id="pose-bar" hidden>
+      <span data-i18n="pose_hint"></span>
+      <button id="pose-reset" data-i18n="pose_reset"></button>
+    </div>
+    <div id="cam-hint" data-i18n="camera_hint"></div>
+  </main>
+
+  <aside id="panel">
+    <section id="info">
+      <h2 id="info-title" data-i18n="hover_hint"></h2>
+      <p id="info-does"></p>
+      <div id="info-meter" hidden><div class="bar"><i></i></div><span></span></div>
+    </section>
+    <section>
+      <h3 data-i18n="top_muscles"></h3>
+      <ol id="top-list"></ol>
+    </section>
+    <section>
+      <h3 data-i18n="joint_angles"></h3>
+      <table id="angles"></table>
+    </section>
+    <section class="how">
+      <h3 data-i18n="how_title"></h3>
+      <p data-i18n="how_text"></p>
+    </section>
+  </aside>
+
+  <footer id="bottom">
+    <button id="play" class="primary"></button>
+    <div class="seg" id="speed" role="group" aria-label="speed">
+      <button data-speed="0.1">0.1×</button><button data-speed="0.25">¼×</button><button data-speed="0.5">½×</button><button data-speed="1">1×</button>
+    </div>
+    <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="phase">
+    <div class="seg" id="layers" role="group">
+      <button data-layer="skin" data-i18n="skin"></button><button data-layer="muscles" data-i18n="muscles"></button><button data-layer="bones" data-i18n="bones"></button>
+    </div>
+    <div class="seg" id="extras" role="group">
+      <button data-extra="labels" data-i18n="labels"></button><button data-extra="angles" data-i18n="angles"></button>
+    </div>
+    <button id="cam-reset" data-i18n="camera_reset"></button>
+  </footer>
+</div>
+
+<script src="vendor/three.js"></script>
+<script src="js/core/vec.js"></script>
+<script src="js/body/skeleton.js"></script>
+<script src="js/body/muscles.js"></script>
+<script src="js/core/kinematics.js"></script>
+<script src="js/core/limb.js"></script>
+<script src="js/core/anim.js"></script>
+<script src="js/core/moves.js"></script>
+<script src="js/core/ik.js"></script>
+<script src="js/core/load.js"></script>
+<script src="js/core/labels.js"></script>
+<script src="js/core/i18n.js"></script>
+<script src="js/core/themes.js"></script>
+<script src="js/body/procedural.js"></script>
+<script src="js/app/app.js"></script>
+</body>
+</html>

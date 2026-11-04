@@ -93,8 +93,8 @@
       keys: [
         { t: 0.0, j: both({ 'root.y': 0.915, 'root.z': 0, 'root.pitch': 0, 'shoulder_*.flex': 0, 'elbow_*.flex': 10, 'lumbar.flex': 0, 'thoracic.flex': 0, 'neck.flex': 0 }) },
         { t: 0.12, j: both({ 'root.y': 0.91, 'root.z': 0, 'root.pitch': 2, 'shoulder_*.flex': 90, 'elbow_*.flex': 5 }) },
-        { t: 0.45, j: both({ 'root.y': 0.56, 'root.z': -0.26, 'root.pitch': 33, 'shoulder_*.flex': 115, 'elbow_*.flex': 5, 'lumbar.flex': 8, 'thoracic.flex': 4, 'neck.flex': -28 }) },
-        { t: 0.55, j: both({ 'root.y': 0.56, 'root.z': -0.26, 'root.pitch': 33, 'shoulder_*.flex': 115, 'lumbar.flex': 8, 'thoracic.flex': 4, 'neck.flex': -28 }) },
+        { t: 0.45, j: both({ 'root.y': 0.56, 'root.z': -0.26, 'root.pitch': 33, 'shoulder_*.flex': 100, 'elbow_*.flex': 5, 'lumbar.flex': 8, 'thoracic.flex': 4, 'neck.flex': -28 }) },
+        { t: 0.55, j: both({ 'root.y': 0.56, 'root.z': -0.26, 'root.pitch': 33, 'shoulder_*.flex': 100, 'lumbar.flex': 8, 'thoracic.flex': 4, 'neck.flex': -28 }) },
         { t: 0.88, j: both({ 'root.y': 0.91, 'root.z': 0, 'root.pitch': 2, 'shoulder_*.flex': 90, 'elbow_*.flex': 5, 'lumbar.flex': 0, 'thoracic.flex': 0, 'neck.flex': 0 }) },
       ],
     },
