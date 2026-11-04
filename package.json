@@ -23,6 +23,58 @@
     "@playwright/test": "1.63.0",
     "c8": "10.1.3",
     "electron": "43.0.0",
-    "three": "0.170.0"
+    "three": "0.170.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "com.alexalesha.goingboy",
+    "productName": "GoingBoy",
+    "copyright": "Copyright (c) 2026 ALEXalesha",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**",
+      "web/**",
+      "assets/icon.ico",
+      "assets/icon.png",
+      "LICENSE",
+      "!**/*.map"
+    ],
+    "electronLanguages": [
+      "en-US",
+      "ru"
+    ],
+    "compression": "maximum",
+    "publish": null,
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "GoingBoy-${version}-Portable.${ext}"
+    },
+    "nsis": {
+      "artifactName": "GoingBoy-${version}-Setup.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "GoingBoy"
+    }
   }
 }
