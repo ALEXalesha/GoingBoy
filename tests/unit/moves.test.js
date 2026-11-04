@@ -110,6 +110,23 @@ for (const mv of compiled) {
     });
   }
 
+  if (mv.def.grips) {
+    test(`${mv.id}: кисти и стопы держатся за перекладины, пока опираются`, () => {
+      const windows = mv.def.grips.flatMap(([n, a, b]) => (mv.def.half ? [[n, a, b], [n.replace(/_L$/, '_X').replace(/_R$/, '_L').replace(/_X$/, '_R'), a + 0.5, b + 0.5]] : [[n, a, b]]));
+      for (const [n, a, b] of windows) {
+        const bone = S.BONE[n].index;
+        for (let ph = a; ph <= b + 1e-9; ph += 0.01) {
+          const f = K.fk(A.sample(mv, ph));
+          const bars = A.envAt(mv, ph).bars;
+          // кисть - точкой хвата, стопа - низом подушечки на верху перекладины
+          const p = /^hand/.test(n) ? K.point(f, bone, A.GRIP) : V.add(f.pos[S.BONE['toes_' + n.slice(-1)].index], [0, -0.025, 0]);
+          const d = Math.min(...bars.map((bar) => (/^hand/.test(n) ? Math.hypot(p[1] - bar.y, p[2] - bar.z) : Math.hypot(p[1] - bar.y - 0.02, p[2] - bar.z))));
+          assert.ok(d < 0.03, `фаза ${ph.toFixed(2)}: ${n} в ${(d * 100).toFixed(1)} см от перекладины`);
+        }
+      }
+    });
+  }
+
   if (mv.def.swing) {
     test(`${mv.id}: маховая стопа не цепляет пол`, () => {
       const windows = mv.def.swing.flatMap(([side, a, b]) => (mv.def.half ? [[side, a, b], [side === 'L' ? 'R' : 'L', a + 0.5, b + 0.5]] : [[side, a, b]]));

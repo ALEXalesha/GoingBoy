@@ -22,7 +22,7 @@
   'use strict';
 
   const G = 9.81;
-  const ROOT_CH = ['root.x', 'root.y', 'root.z', 'root.yaw', 'root.pitch', 'root.roll'];
+  const ROOT_CH = ['root.x', 'root.y', 'root.z', 'root.yaw', 'root.pitch', 'root.roll', 'root.spin'];
   const FOOT_CH = /^foot_[LR]\.(x|z|lift|heel|yaw|ik)$/;
   const HAND_CH = /^hand_[LR]\.(x|y|z|ik)$/;
   const LEG_DOFS = {};
@@ -64,7 +64,7 @@
 
   /** Отражение одного канала: имя на другой стороне и множитель. */
   function mirrorChannel(key) {
-    if (key === 'root.x' || key === 'root.yaw' || key === 'root.roll') return [key, -1];
+    if (key === 'root.x' || key === 'root.yaw' || key === 'root.roll' || key === 'root.spin') return [key, -1];
     if (key.startsWith('root.')) return [key, 1];
     if (FOOT_CH.test(key) || HAND_CH.test(key)) {
       const other = key.replace(/^(foot|hand)_L/, '$1_X').replace(/^(foot|hand)_R/, '$1_L').replace(/^(foot|hand)_X/, '$1_R');
@@ -127,7 +127,7 @@
     const p = K.restPose();
     for (let i = 0; i < K.ND; i++) p.a[i] = val(S.DOFS[i].key, 0);
     p.root.pos = [val('root.x', 0), val('root.y', S.BONES[0].offset[1]), val('root.z', 0)];
-    p.root.rot = [val('root.yaw', 0), val('root.pitch', 0), val('root.roll', 0)];
+    p.root.rot = [val('root.yaw', 0), val('root.pitch', 0), val('root.roll', 0), val('root.spin', 0)];
     for (const s of mv.feet) {
       // ik: 1 - стопа стоит в точке (нога по IK), 0 - нога по углам из ключей, между - смесь
       const w = Math.min(1, Math.max(0, val(`foot_${s}.ik`, 1)));

@@ -8,7 +8,8 @@
 // действие верно только в этом диапазоне угла (на краях оно в жизни слабеет или меняется:
 // грудная выше 100° отведения сама отводит; передняя дельта выше 130° работает вместе с
 // поворотом лопатки, которого в модели нет). Четвёртый элемент - условие на другие углы того
-// же сустава: «сгибание плеча» у руки, поднятой в сторону выше 80°, - уже другое движение.
+// же сустава: «сгибание плеча» у руки, поднятой в сторону выше 80°, и «отведение» руки, поднятой
+// вперёд выше 80°, - уже другие движения.
 // fmax - наибольшая сила, Н (порядок величин по площади поперечного сечения; округлено).
 // Левая сторона пишется один раз, правая - отражением.
 (function (root, factory) {
@@ -54,11 +55,11 @@
     // ---------- плечевой пояс и плечо ----------
     { id: 'pectoralis', group: 'shoulder', fmax: 1000, act: { 'shoulder.abd': [-1, -30, 85], 'shoulder.rot': 1 },
       path: [['chest', [0.03, 0.12, 0.12]], ['wrap', 'upperarm', [0, 0, 1], 0.05], ['upperarm', [0.02, -0.08, 0.035]]] },
-    { id: 'latissimus', group: 'shoulder', fmax: 1100, act: { 'shoulder.flex': [-1, -20, 180, { 'shoulder.abd': [-30, 80] }], 'shoulder.abd': [-1, -10, 180, { 'shoulder.flex': [-60, 150] }] },
+    { id: 'latissimus', group: 'shoulder', fmax: 1100, act: { 'shoulder.flex': [-1, -20, 180, { 'shoulder.abd': [-30, 80] }], 'shoulder.abd': [-1, -10, 180, { 'shoulder.flex': [-60, 80] }] },
       path: [['spine', [0.05, 0.05, -0.09]], ['wrap', 'upperarm', [0.3, -0.8, -0.5], 0.11], ['upperarm', [-0.01, -0.07, 0.015]]] },
     { id: 'deltoid_ant', group: 'shoulder', fmax: 600, act: { 'shoulder.flex': [1, -60, 105, { 'shoulder.abd': [-30, 80] }] },
       path: [['clavicle', [0.13, 0.05, 0.02]], ['wrap', 'upperarm', [0, 0, 1], 0.05], ['upperarm', [0.02, -0.14, 0.025]]] },
-    { id: 'deltoid_mid', group: 'shoulder', fmax: 1100, act: { 'shoulder.abd': 1 },
+    { id: 'deltoid_mid', group: 'shoulder', fmax: 1100, act: { 'shoulder.abd': [1, -30, 180, { 'shoulder.flex': [-60, 80] }] },
       path: [['clavicle', [0.17, 0.035, -0.03]], ['wrap', 'upperarm', [1, 0, 0], 0.055], ['upperarm', [0.03, -0.14, 0]]] },
     { id: 'deltoid_post', group: 'shoulder', fmax: 500, act: { 'shoulder.flex': [-1, -60, 150, { 'shoulder.abd': [-30, 80] }] },
       path: [['chest', [0.13, 0.18, -0.08]], ['wrap', 'upperarm', [0, 0, -1], 0.05], ['upperarm', [0.02, -0.14, -0.025]]] },

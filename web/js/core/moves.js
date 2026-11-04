@@ -248,6 +248,55 @@
           'hip_R.flex': 65, 'knee_R.flex': 104, 'hip_L.flex': 68, 'knee_L.flex': 125, 'root.yaw': 0, 'thoracic.rot': 0 } },
       ],
     },
+    // ---------------- лазанье по лестнице: кисти и стопы на перекладинах, накрест ----------------
+    // Лестница едет вниз (как дорожка у ходьбы): за цикл 2 перекладины по 30 см. Кисть держит
+    // перекладину 3/4 цикла и опускается вместе с ней, потом тянется на две выше. Стопа - так же.
+    // Ключи на полцикла; правая рука и левая нога - зеркало со сдвигом на полцикла.
+    {
+      id: 'climb', group: 'locomotion', dur: 2.4, speed: 0, half: true, ground: 'none',
+      ladder: { z: 0.35, spacing: 0.3, base: 0, count: 10, climb: 0.6 },
+      grips: [['hand_L', 0, 0.74], ['foot_R', 0, 0.74]],
+      base: { 'root.y': 1.3, 'root.pitch': 6, 'neck.flex': -15, 'hand_L.x': 0.2, 'hand_R.x': -0.2, 'foot_L.x': 0.12, 'foot_R.x': -0.12, 'foot_L.heel': 8, 'foot_R.heel': 8 },
+      keys: [
+        { t: 0.0, j: { 'hand_L.y': 2.1, 'hand_L.z': 0.35, 'hand_R.y': 1.8, 'hand_R.z': 0.35,
+          'foot_R.lift': 0.92, 'foot_R.z': 0.35, 'foot_L.lift': 0.62, 'foot_L.z': 0.35, 'foot_L.heel': 8, 'foot_R.heel': 8 } },
+        { t: 0.125, j: { 'hand_L.y': 2.025, 'hand_R.y': 1.725, 'foot_R.lift': 0.845, 'foot_L.lift': 0.545 } },
+        { t: 0.2, j: { 'hand_R.y': 1.68, 'hand_R.z': 0.35, 'foot_L.lift': 0.5, 'foot_L.z': 0.35, 'foot_L.heel': 8 } },
+        { t: 0.25, j: { 'hand_L.y': 1.95, 'hand_L.z': 0.35, 'hand_R.y': 1.66, 'hand_R.z': 0.33, 'foot_R.lift': 0.77, 'foot_R.z': 0.35, 'foot_L.lift': 0.49, 'foot_L.z': 0.32, 'foot_L.heel': 18, 'foot_R.heel': 8 } },
+        { t: 0.375, j: { 'hand_L.y': 1.875, 'hand_R.y': 1.9, 'hand_R.z': 0.24, 'foot_R.lift': 0.695, 'foot_L.lift': 0.72, 'foot_L.z': 0.2, 'foot_L.heel': 40 } },
+      ],
+    },
+    // ---------------- плавание кролем: лицом вниз у поверхности, гребок - пронос, ноги попеременно ----------------
+    // Кисти идут по путям (IK руки): гребок под водой от вытянутой вперёд руки к бедру, пронос
+    // над водой с высоким локтем. Левая рука: вход 0, захват 0.15, гребок до 0.45, выход 0.5,
+    // пронос до 1. Ключи на полцикла: правая рука - левая со сдвигом 0.5. Ноги - по три удара
+    // на цикл, вдох в сторону проносимой руки (то вправо, то влево).
+    {
+      id: 'swim', group: 'locomotion', dur: 1.6, speed: 1.2, half: true, ground: 'none',
+      water: { level: 1.0 },
+      base: { 'root.y': 0.97, 'root.pitch': 90, 'neck.flex': -25, 'ankle_L.dorsi': -45, 'ankle_R.dorsi': -45, 'hip_L.abd': 3, 'hip_R.abd': 3 },
+      keys: [
+        { t: 0.0, j: { 'hand_L.x': 0.2, 'hand_L.y': 0.92, 'hand_L.z': 1.05, 'shoulder_L.rot': 0, 'hand_L.ik': 1,
+          'shoulder_L.flex': 151, 'shoulder_L.abd': 1, 'elbow_L.flex': 45,
+          'hand_R.x': -0.22, 'hand_R.y': 0.9, 'hand_R.z': -0.12, 'shoulder_R.rot': 20, 'hand_R.ik': 1,
+          'shoulder_R.flex': -17, 'shoulder_R.abd': 13, 'elbow_R.flex': 48,
+          'root.spin': 0, 'neck.rot': 0,
+          'hip_L.flex': 10, 'knee_L.flex': 5, 'hip_R.flex': -10, 'knee_R.flex': 5 } },
+        { t: 0.083, j: { 'knee_L.flex': 25, 'knee_R.flex': 25 } },
+        { t: 0.05, j: { 'hand_R.ik': 0, 'shoulder_R.flex': -5, 'shoulder_R.abd': 40, 'elbow_R.flex': 75, 'shoulder_R.rot': 30 } },
+        { t: 0.15, j: { 'hand_L.x': 0.18, 'hand_L.y': 0.75, 'hand_L.z': 0.95, 'shoulder_L.rot': 30, 'neck.rot': -55 } },
+        { t: 0.1667, j: { 'hip_L.flex': -10, 'knee_L.flex': 5, 'hip_R.flex': 10, 'knee_R.flex': 5 } },
+        { t: 0.25, j: { 'root.spin': -35, 'hand_L.ik': 1, 'knee_L.flex': 25, 'knee_R.flex': 25 } },
+        { t: 0.15, j: { 'shoulder_R.flex': 30, 'shoulder_R.abd': 72, 'elbow_R.flex': 110, 'shoulder_R.rot': 40 } },
+        { t: 0.28, j: { 'shoulder_R.flex': 100, 'shoulder_R.abd': 68, 'elbow_R.flex': 100, 'shoulder_R.rot': 30 } },
+        { t: 0.3, j: { 'hand_L.x': 0.1, 'hand_L.y': 0.62, 'hand_L.z': 0.55, 'neck.rot': -40 } },
+        { t: 0.3333, j: { 'hip_L.flex': 10, 'knee_L.flex': 5, 'hip_R.flex': -10, 'knee_R.flex': 5 } },
+        { t: 0.4, j: { 'shoulder_R.flex': 145, 'shoulder_R.abd': 30, 'elbow_R.flex': 55, 'shoulder_R.rot': 10, 'neck.rot': 0 } },
+        { t: 0.45, j: { 'hand_R.ik': 0, 'shoulder_R.flex': 151, 'shoulder_R.abd': 2, 'elbow_R.flex': 46, 'hand_L.ik': 1 } },
+        { t: 0.417, j: { 'knee_L.flex': 25, 'knee_R.flex': 25 } },
+        { t: 0.45, j: { 'hand_L.x': 0.18, 'hand_L.y': 0.75, 'hand_L.z': 0.0, 'shoulder_L.rot': 20 } },
+      ],
+    },
   ];
 
   return { MOVES, both };

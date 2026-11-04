@@ -134,6 +134,10 @@ test('смешивание: края - сами позы, корпус по ко
   }
   const a = K.poseFrom({ root: { rot: [0, 350, 0] } }), b = K.poseFrom({ root: { rot: [0, 10, 0] } });
   near(K.blend(a, b, 0.5).root.rot[1], 360, 1e-9, 'через 360, а не назад через 180');
+  // вращение вокруг своей оси: лёжа лицом вниз (тангаж 90) +90 кладёт тело на правый бок
+  const side = K.fk(K.poseFrom({ root: { pos: [0, 1, 0], rot: [0, 90, 0, 90] } }));
+  const sh = V.sub(side.pos[S.BONE.upperarm_L.index], side.pos[S.BONE.upperarm_R.index]);
+  assert.ok(sh[1] > 0.3, 'левое плечо вверху');
 });
 
 test('пределы: нарушения находятся и обрезаются', () => {

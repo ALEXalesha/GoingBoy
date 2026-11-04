@@ -160,3 +160,45 @@ test('опоры уравновешивают и силы, и моменты в�
   assert.ok(V.len(F) < 1, 'силы не уравновешены: ' + V.len(F));
   assert.ok(V.len(Mo) < 1, 'моменты не уравновешены: ' + V.len(Mo).toFixed(2) + ' Н·м');
 });
+
+// Плавание: вода держит и тормозит, а гребок толкает - по физике.
+test('кроль: гребок под водой, пронос над водой', () => {
+  const mv = compiled.find((m) => m.id === 'swim');
+  const level = A.envAt(mv, 0).water.level;
+  const hand = (ph) => K.point(K.fk(A.sample(mv, ph)), S.BONE.hand_L.index, A.GRIP);
+  for (let ph = 0.15; ph <= 0.45; ph += 0.02) assert.ok(hand(ph)[1] < level, `гребок над водой в фазе ${ph.toFixed(2)}`);
+  let top = -Infinity;
+  for (let ph = 0.6; ph <= 0.9; ph += 0.02) top = Math.max(top, hand(ph)[1]);
+  assert.ok(top > level + 0.05, `пронос не поднимается над водой: ${(top - level).toFixed(3)}`);
+});
+
+test('кроль: вода держит тело, гребок даёт тягу вперёд, в гребке горит широчайшая', () => {
+  const mv = compiled.find((m) => m.id === 'swim');
+  // гребок левой: сила воды на кисть и предплечье направлена вперёд (+z)
+  let thrust = 0;
+  for (let ph = 0.2; ph <= 0.42; ph += 0.02) {
+    const r = Ld.analyzeAt((t) => A.at(mv, t), ph * mv.dur, 0.03, A.envAt(mv, ph));
+    assert.equal(r.contacts.length, 0, 'в воде опор нет');
+    for (const sgm of r.segs) if (['hand_L', 'forearm_L'].includes(S.BONES[sgm.bone].name)) {
+      const m = S.BONES[sgm.bone].mass * S.MASS;
+      // сила воды = полная сила минус вес и инерция; проще - сравнить с тем же кадром без воды
+      thrust += sgm.F[2];
+      void m;
+    }
+  }
+  const dry = (() => {
+    let z = 0;
+    for (let ph = 0.2; ph <= 0.42; ph += 0.02) {
+      const r = Ld.analyzeAt((t) => A.at(mv, t), ph * mv.dur, 0.03, {});
+      for (const sgm of r.segs) if (['hand_L', 'forearm_L'].includes(S.BONES[sgm.bone].name)) z += sgm.F[2];
+    }
+    return z;
+  })();
+  assert.ok(thrust - dry > 20, `тяга гребка ${(thrust - dry).toFixed(1)} Н`);
+  const mid = at('swim', 0.32);
+  assert.ok(act(mid, 'latissimus_L') > 0.1, 'в гребке горит широчайшая: ' + act(mid, 'latissimus_L'));
+  // неподвижное тело в воде: выталкивание держит вес, мышцам почти нечего делать
+  const p = K.poseFrom({ root: { pos: [0, 0.97, 0], rot: [0, 90, 0] } });
+  const still = Ld.analyze({ prev: p, pose: p, next: p, h: 0.03, env: { water: { level: 1.2, flow: 0 }, floor: false } });
+  assert.ok(Math.max(...still.act) < 0.05, 'лежит на воде без усилия');
+});

@@ -2,7 +2,9 @@
 // Плюс то, что нужно всем остальным частям ядра: якобиан (куда сдвигается точка при повороте
 // сустава), центр масс, капсулы кожи в мире, отражение и смешивание поз, проверка пределов.
 //
-// Поза: { root: { pos: [x, y, z], rot: [рысканье, тангаж, крен] }, a: Float64Array углов }.
+// Поза: { root: { pos: [x, y, z], rot: [рысканье, тангаж, крен, вращение] }, a: Float64Array углов }.
+// Вращение - вокруг собственной продольной оси тела (позвоночника), уже после тангажа: так
+// лежащий пловец перекатывается с боку на бок.
 // root.pos - начало таза в мире, углы - градусы, a[i] - степень свободы Skeleton.DOFS[i].
 (function (root, factory) {
   /* c8 ignore start */
@@ -16,7 +18,7 @@
   const ND = S.DOFS.length;
 
   function restPose() {
-    return { root: { pos: S.BONES[0].offset.slice(), rot: [0, 0, 0] }, a: new Float64Array(ND) };
+    return { root: { pos: S.BONES[0].offset.slice(), rot: [0, 0, 0, 0] }, a: new Float64Array(ND) };
   }
 
   function clone(p) {
@@ -28,7 +30,7 @@
     const p = restPose();
     if (o && o.root) {
       if (o.root.pos) p.root.pos = o.root.pos.slice();
-      if (o.root.rot) p.root.rot = o.root.rot.slice();
+      if (o.root.rot) p.root.rot = [0, 1, 2, 3].map((k) => o.root.rot[k] || 0);
     }
     if (o && o.j) {
       for (const k of Object.keys(o.j)) {
@@ -59,7 +61,7 @@
       const par = S.PARENT[b];
       if (par < 0) {
         pos[b] = p.root.pos.slice();
-        rot[b] = V.qEulerYXZ(p.root.rot[0], p.root.rot[1], p.root.rot[2]);
+        rot[b] = V.qMul(V.qEulerYXZ(p.root.rot[0], p.root.rot[1], p.root.rot[2]), V.qAxis(V.AXES.y, (p.root.rot[3] || 0) * V.DEG));
       } else {
         pos[b] = V.add(pos[par], V.qRot(rot[par], S.BONES[b].offset));
         rot[b] = V.qMul(rot[par], localRot(p, b));
@@ -133,7 +135,7 @@
   function mirror(p) {
     const q = restPose();
     q.root.pos = [-p.root.pos[0], p.root.pos[1], p.root.pos[2]];
-    q.root.rot = [-p.root.rot[0], p.root.rot[1], -p.root.rot[2]];
+    q.root.rot = [-p.root.rot[0], p.root.rot[1], -p.root.rot[2], -(p.root.rot[3] || 0)];
     S.DOFS.forEach((d, i) => { q.a[S.DOF[S.mirrorKey(d.key)]] = p.a[i] * S.mirrorSign(d.key); });
     return q;
   }
@@ -145,7 +147,7 @@
   function blend(p0, p1, w) {
     const q = restPose();
     q.root.pos = V.lerp(p0.root.pos, p1.root.pos, w);
-    q.root.rot = p0.root.rot.map((r, k) => r + V.wrapDeg(p1.root.rot[k] - r) * w);
+    q.root.rot = [0, 1, 2, 3].map((k) => { const r = p0.root.rot[k] || 0; return r + V.wrapDeg((p1.root.rot[k] || 0) - r) * w; });
     for (let i = 0; i < ND; i++) q.a[i] = p0.a[i] + (p1.a[i] - p0.a[i]) * w;
     return q;
   }
