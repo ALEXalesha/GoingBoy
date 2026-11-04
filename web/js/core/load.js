@@ -94,29 +94,44 @@
   const GRAV = [0, -9.81, 0];
   const FLOOR_TOL = 0.025;   // на сколько над полом кость ещё считается опорой, м
   const BAR_TOL = 0.05;      // хват на перекладине
+  const BAR_R = 0.02;        // радиус перекладины
+  const FEET = ['foot_L', 'toes_L', 'foot_R', 'toes_R'].map((n) => S.BONE[n].index);
   const TAU_MIN = 0.5;       // Н·м: меньше - шум, мышцы не зовём
 
   /**
    * Точки опоры: концы капсул у пола (у стопы - пятка и подушечка отдельно, так опора может
-   * перекатываться) и кисти на перекладине. Перекладина - линия вдоль x через env.bar.
+   * перекатываться), кисти на перекладинах (держат и тянут) и стопы на перекладинах (только
+   * давят, как на пол). Перекладины - линии вдоль x: env.bars = [{ y, z }]; env.floor = false -
+   * пола рядом нет (лестница высоко).
    */
   function contacts(f, env = {}) {
     const out = [];
+    const bars = env.bars || [];
     for (const c of K.capsules(f)) {
       for (const e of [c.a, c.b]) {
         const y = e[1] - c.r;
-        if (y < FLOOR_TOL) out.push({ bone: c.bone, point: [e[0], Math.max(0, y), e[2]], floor: true });
+        if (env.floor !== false && y < FLOOR_TOL) out.push({ bone: c.bone, point: [e[0], Math.max(0, y), e[2]], floor: true });
+        if (FEET.includes(c.bone)) {
+          for (const bar of bars) {
+            // стопа стоит на перекладине: низ капсулы у верха перекладины
+            if (Math.abs(e[2] - bar.z) < c.r + 0.03 && Math.abs(y - (bar.y + BAR_R)) < FLOOR_TOL) out.push({ bone: c.bone, point: [e[0], bar.y + BAR_R, bar.z], floor: true });
+          }
+        }
       }
     }
-    if (env.bar) {
-      for (const n of ['hand_L', 'hand_R']) {
-        const b = S.BONE[n].index;
-        const g = K.point(f, b, [0, -0.08, 0]);
-        if (Math.hypot(g[1] - env.bar[1], g[2] - env.bar[2]) < BAR_TOL) out.push({ bone: b, point: g, floor: false });
-      }
+    for (const n of ['hand_L', 'hand_R']) {
+      const b = S.BONE[n].index;
+      const g = K.point(f, b, [0, -0.08, 0]);
+      for (const bar of bars) if (Math.hypot(g[1] - bar.y, g[2] - bar.z) < BAR_TOL) { out.push({ bone: b, point: g, floor: false }); break; }
     }
     return out;
   }
+
+  // Вода: выталкивающая сила держит погружённый сегмент (тело почти как вода по плотности),
+  // сопротивление - против скорости сегмента относительно воды: F = -k·S·|v|·v.
+  const DRAG_K = 500;   // 0.5 · плотность воды · коэффициент сопротивления ~1
+  const AREA = { pelvis: 0.05, spine: 0.05, chest: 0.06, neck: 0.01, head: 0.03, upperarm: 0.015, forearm: 0.02, hand: 0.02, thigh: 0.03, shin: 0.025, foot: 0.02 };
+  const areaOf = (name) => AREA[name.replace(/_[LR]$/, '')] || 0;
 
   /** Решить квадратную систему (Гаусс с выбором ведущего). */
   function solve(Am, b) {
@@ -171,7 +186,8 @@
   }
 
   /**
-   * Нагрузка на кадре. prev/pose/next - позы через h секунд (для ускорений), env - { bar }.
+   * Нагрузка на кадре. prev/pose/next - позы через h секунд (для ускорений), env - окружение
+   * (anim.envAt: перекладины, пол, вода).
    * Возвращает: опоры с силами, нужный момент мышц tau по каждой степени свободы (Н·м),
    * плечи, активацию каждой мышцы 0..1 и скорость изменения длины (м/с, + удлиняется).
    */
@@ -184,7 +200,13 @@
       if (!m) continue;
       const c = K.segmentCom(f, b);
       const acc = V.scale(V.add(V.sub(K.segmentCom(fn, b), V.scale(c, 2)), K.segmentCom(fp, b)), 1 / (h * h));
-      const F = V.scale(V.sub(GRAV, acc), m);              // вес и сила инерции (Даламбер)
+      let F = V.scale(V.sub(GRAV, acc), m);                // вес и сила инерции (Даламбер)
+      if (env && env.water && c[1] < env.water.level) {
+        F = V.add(F, [0, m * 9.81, 0]);                    // выталкивание
+        const v = V.sub(K.segmentCom(fn, b), K.segmentCom(fp, b));
+        const rel = V.add(V.scale(v, 1 / (2 * h)), [0, 0, env.water.flow || 0]);
+        F = V.add(F, V.scale(rel, -DRAG_K * areaOf(S.BONES[b].name) * V.len(rel)));
+      }
       segs.push({ bone: b, point: c, F });
       M_ += m;
       Rsum = V.sub(Rsum, F);                               // опоры должны дать минус сумму
@@ -208,7 +230,7 @@
     const act = activation(tau, arms);
     const Lp = paths(prev, fp).map(pathLength), Ln = paths(next, fn).map(pathLength);
     const vel = Lp.map((l, mi) => (Ln[mi] - l) / (2 * h));
-    return { f, com, contacts: list, tau, arms, act, vel, mass: M_ };
+    return { f, com, contacts: list, tau, arms, act, vel, mass: M_, segs };
   }
 
   /**

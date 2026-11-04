@@ -24,9 +24,12 @@
   const G = 9.81;
   const ROOT_CH = ['root.x', 'root.y', 'root.z', 'root.yaw', 'root.pitch', 'root.roll'];
   const FOOT_CH = /^foot_[LR]\.(x|z|lift|heel|yaw|ik)$/;
+  const HAND_CH = /^hand_[LR]\.(x|y|z|ik)$/;
   const LEG_DOFS = {};
   for (const s of ['L', 'R']) LEG_DOFS[s] = S.DOFS.map((d, i) => i).filter((i) => /^(hip|knee|ankle|toe)_/.test(S.DOFS[i].key) && S.DOFS[i].key.includes('_' + s + '.'));
-  const known = (key) => ROOT_CH.includes(key) || FOOT_CH.test(key) || key in S.DOF;
+  const ARM_DOFS = {};
+  for (const s of ['L', 'R']) ARM_DOFS[s] = [`shoulder_${s}.flex`, `shoulder_${s}.abd`, `elbow_${s}.flex`].map((k) => S.DOF[k]);
+  const known = (key) => ROOT_CH.includes(key) || FOOT_CH.test(key) || HAND_CH.test(key) || key in S.DOF;
 
   /** Наклоны PCHIP (Фрич - Бутленд) во внутренних узлах; на краях массива - 0. */
   function pchipSlopes(t, y) {
@@ -63,8 +66,8 @@
   function mirrorChannel(key) {
     if (key === 'root.x' || key === 'root.yaw' || key === 'root.roll') return [key, -1];
     if (key.startsWith('root.')) return [key, 1];
-    if (FOOT_CH.test(key)) {
-      const other = key.replace(/^foot_L/, 'foot_X').replace(/^foot_R/, 'foot_L').replace(/^foot_X/, 'foot_R');
+    if (FOOT_CH.test(key) || HAND_CH.test(key)) {
+      const other = key.replace(/^(foot|hand)_L/, '$1_X').replace(/^(foot|hand)_R/, '$1_L').replace(/^(foot|hand)_X/, '$1_R');
       return [other, /\.(x|yaw)$/.test(key) ? -1 : 1];
     }
     return [S.mirrorKey(key), S.mirrorSign(key)];
@@ -109,7 +112,8 @@
     const hang = def.hang ? { bar: def.hang.bar.slice(), grip: def.hang.grip.map((n) => S.BONE[n].index) } : null;
     const pin = def.pin ? { at: def.pin.at.slice(), bones: def.pin.bones.map((n) => S.BONE[n].index) } : null;
     const feet = ['L', 'R'].filter((s) => `foot_${s}.x` in channels || `foot_${s}.x` in base);
-    return { id: def.id, dur: def.dur, speed: def.speed || 0, def, channels, base, ground, level, hang, pin, feet, flights, cache: {} };
+    const hands = ['L', 'R'].filter((s) => `hand_${s}.y` in channels || `hand_${s}.y` in base);
+    return { id: def.id, dur: def.dur, speed: def.speed || 0, def, channels, base, ground, level, hang, pin, feet, hands, flights, cache: {} };
   }
 
   /** Значение канала в фазе ph (из ключей, из base или dflt). */
@@ -132,12 +136,46 @@
       L.plantFoot(q, s, val(`foot_${s}.x`, 0), val(`foot_${s}.z`, 0), val(`foot_${s}.heel`, 0), val(`foot_${s}.yaw`, 0), val(`foot_${s}.lift`, 0));
       for (const i of LEG_DOFS[s]) p.a[i] += (q.a[i] - p.a[i]) * w;
     }
+    for (const s of mv.hands) {
+      // кисть держит точку (хват - 8 см от запястья); руку ставит limb.js, несколько повторов,
+      // пока направление кисти после постановки не перестанет меняться
+      const w = Math.min(1, Math.max(0, val(`hand_${s}.ik`, 1)));
+      if (w <= 0) continue;
+      const goal = [val(`hand_${s}.x`, 0), val(`hand_${s}.y`, 0), val(`hand_${s}.z`, 0)];
+      const q = K.clone(p);
+      const hb = S.BONE['hand_' + s].index;
+      for (let k = 0; k < 4; k++) {
+        const f = K.fk(q);
+        L.reach(q, 'arm_' + s, V.sub(goal, V.sub(K.point(f, hb, GRIP), f.pos[hb])));
+      }
+      for (const i of ARM_DOFS[s]) p.a[i] += (q.a[i] - p.a[i]) * w;
+    }
     return p;
+  }
+
+  const GRIP = [0, -0.08, 0];
+
+  /**
+   * Окружение движения в фазе ph: перекладины (линии вдоль x: { y, z }), есть ли пол рядом,
+   * вода ({ level, flow } - уровень и скорость встречного потока, м/с).
+   */
+  function envAt(mv, ph) {
+    const e = {};
+    if (mv.hang) e.bars = [{ y: mv.hang.bar[1], z: mv.hang.bar[2] }];
+    const lad = mv.def.ladder;
+    if (lad) {
+      const shift = ((((ph % 1) + 1) % 1) * lad.climb) % lad.spacing;
+      e.bars = [];
+      for (let k = 0; k < lad.count; k++) e.bars.push({ y: lad.base + k * lad.spacing - shift, z: lad.z });
+      e.floor = false;
+    }
+    if (mv.def.water) e.water = { level: mv.def.water.level, flow: mv.speed };
+    return e;
   }
 
   /** Середина группы точек захвата (кисть: 8 см от запястья). */
   function gripMid(f, bones) {
-    const pts = bones.map((b) => K.point(f, b, [0, -0.08, 0]));
+    const pts = bones.map((b) => K.point(f, b, GRIP));
     return V.scale(pts.reduce((a, g) => V.add(a, g), [0, 0, 0]), 1 / pts.length);
   }
 
@@ -261,6 +299,6 @@
     pl.fade = Math.min(FADE, pl.fade + d);
   }
 
-  return { G, FADE, gripMid, channel, compile, sample, at, rawPose, pchipSlopes, hermite, makeChannel, evalChannel, flightAt,
+  return { G, FADE, GRIP, gripMid, channel, envAt, compile, sample, at, rawPose, pchipSlopes, hermite, makeChannel, evalChannel, flightAt,
     createPlayer, current, play, step };
 });

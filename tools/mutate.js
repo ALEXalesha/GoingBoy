@@ -24,7 +24,7 @@ const MUTANTS = [
   { id: 'glow-undriven', file: 'web/js/core/load.js', from: 'if (!M.DRIVEN[i] || Math.abs(t) < TAU_MIN) return;', to: 'if (Math.abs(t) < TAU_MIN) return;', unit: 'подсветка согласована|эталонные позы|в стойке' },
   { id: 'floor-pulls', file: 'web/js/core/load.js', from: 'const bad = idx.filter((k) => list[k].floor && out[k][1] < 0);', to: 'const bad = [];', unit: 'пол только толкает|стойка без движения' },
   { id: 'no-moment-balance', file: 'web/js/core/load.js', from: 'const forces = contactForces(list, Rsum, com, Mc);', to: 'const forces = contactForces(list, Rsum, com);', unit: 'уравновешивают' },
-  { id: 'bar-is-point', file: 'web/js/core/load.js', from: 'if (Math.hypot(g[1] - env.bar[1], g[2] - env.bar[2]) < BAR_TOL)', to: 'if (V.dist(g, env.bar) < BAR_TOL)', unit: 'вис на перекладине' },
+  { id: 'bar-is-point', file: 'web/js/core/load.js', from: 'if (Math.hypot(g[1] - bar.y, g[2] - bar.z) < BAR_TOL)', to: 'if (V.dist(g, [0, bar.y, bar.z]) < BAR_TOL)', unit: 'вис на перекладине' },
   { id: 'state-swapped', file: 'web/js/core/load.js', from: "if (vel < -0.01) return 'shorten';", to: "if (vel > 0.01) return 'shorten';", unit: 'что мышца делает' },
   // ---------- мышцы ----------
   { id: 'biceps-extends', file: 'web/js/body/muscles.js', from: "{ id: 'biceps', group: 'arm', fmax: 800, act: { 'elbow.flex': 1 },", to: "{ id: 'biceps', group: 'arm', fmax: 800, act: { 'elbow.flex': -1 },", unit: 'действие мышцы из подписи|описание мышцы' },

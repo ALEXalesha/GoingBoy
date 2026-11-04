@@ -18,7 +18,7 @@ const W = S.MASS * 9.81;
 const compiled = MOVES.map((m) => A.compile(m));
 const at = (id, ph) => {
   const mv = compiled.find((m) => m.id === id);
-  return Ld.analyzeAt((t) => A.at(mv, t), ph * mv.dur, 0.03, { bar: mv.hang && mv.hang.bar });
+  return Ld.analyzeAt((t) => A.at(mv, t), ph * mv.dur, 0.03, A.envAt(mv, ph));
 };
 const act = (r, id) => r.act[M.MUSCLE[id]];
 const still = (p) => Ld.analyze({ prev: p, pose: p, next: p, h: 0.03 });
@@ -61,7 +61,7 @@ test('подсветка согласована с моментом в суст�
   for (const mv of compiled) {
     for (let i = 0; i < 24; i++) {
       const ph = i / 24;
-      const r = Ld.analyzeAt((t) => A.at(mv, t), ph * mv.dur, 0.03, { bar: mv.hang && mv.hang.bar });
+      const r = Ld.analyzeAt((t) => A.at(mv, t), ph * mv.dur, 0.03, A.envAt(mv, ph));
       // 1) горящая мышца помогает хотя бы одному суставу, которому нужен момент её знака
       r.act.forEach((a, mi) => {
         if (a <= 0.05) return;

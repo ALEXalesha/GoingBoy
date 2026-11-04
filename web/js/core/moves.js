@@ -232,6 +232,22 @@
           'shoulder_R.abd': 90, 'shoulder_R.flex': 20, 'elbow_R.flex': 50, 'thoracic.lat': 4, 'neck.lat': 4, 'lumbar.rot': 3 } },
       ],
     },
+    // ---------------- ползанье на четвереньках: кисти и колени, руки и ноги накрест ----------------
+    // Голень в опоре лежит на полу: сгибание колена = сгибание бедра - наклон корпуса (~68°) + 90°.
+    {
+      id: 'crawl', group: 'locomotion', dur: 2.0, speed: 0.3, half: true,
+      ground: ['hand_L', 'hand_R', 'shin_L', 'shin_R', 'foot_L', 'toes_L', 'foot_R', 'toes_R'],
+      level: [['hand_L', 'hand_R'], ['shin_L', 'shin_R', 'foot_L', 'toes_L', 'foot_R', 'toes_R']],
+      support: [['hand_L', 'hand_R'], ['shin_L', 'shin_R']],
+      base: { 'root.pitch': 65, 'neck.flex': -40, 'lumbar.flex': 4, 'ankle_L.dorsi': -50, 'ankle_R.dorsi': -50, 'toe_L.ext': -20, 'toe_R.ext': -20,
+        'shoulder_L.abd': 6, 'shoulder_R.abd': 6, 'hip_L.abd': 6, 'hip_R.abd': 6 },
+      keys: [
+        { t: 0.0, j: { 'shoulder_L.flex': 80, 'elbow_L.flex': 0, 'shoulder_R.flex': 52, 'elbow_R.flex': 0,
+          'hip_R.flex': 80, 'knee_R.flex': 119, 'hip_L.flex': 50, 'knee_L.flex': 89, 'root.yaw': 3, 'thoracic.rot': -3 } },
+        { t: 0.25, j: { 'shoulder_L.flex': 66, 'elbow_L.flex': 0, 'shoulder_R.flex': 66, 'elbow_R.flex': 40,
+          'hip_R.flex': 65, 'knee_R.flex': 104, 'hip_L.flex': 68, 'knee_L.flex': 125, 'root.yaw': 0, 'thoracic.rot': 0 } },
+      ],
+    },
   ];
 
   return { MOVES, both };

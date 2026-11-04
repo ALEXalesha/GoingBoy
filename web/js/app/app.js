@@ -151,7 +151,7 @@
     const bin = ((Math.round((player.time / mv.dur) * BINS) % BINS) + BINS) % BINS;
     const key = mv.id + ':' + bin;
     if (!cache.has(key)) {
-      cache.set(key, Ld.analyzeAt((t) => A.at(mv, t), (bin / BINS) * mv.dur, 0.03, { bar: mv.hang && mv.hang.bar }));
+      cache.set(key, Ld.analyzeAt((t) => A.at(mv, t), (bin / BINS) * mv.dur, 0.03, A.envAt(mv, bin / BINS)));
     }
     void pose;
     return cache.get(key);
