@@ -42,12 +42,12 @@
   const get = (p, key) => p.a[S.DOF[key]];
   function set(p, key, v) { p.a[S.DOF[key]] = v; return p; }
 
-  /** Поворот кости относительно родителя от её степеней свободы. */
-  function localRot(p, bone) {
+  /** Поворот кости относительно родителя от её степеней свободы (k - доля углов, 1 - целиком). */
+  function localRot(p, bone, k = 1) {
     let q = V.QI;
     for (const i of S.BONE_DOFS[bone]) {
       const d = S.DOFS[i];
-      q = V.qMul(q, V.qAxis(V.AXES[d.axis], d.sign * p.a[i] * V.DEG));
+      q = V.qMul(q, V.qAxis(V.AXES[d.axis], d.sign * p.a[i] * k * V.DEG));
     }
     return q;
   }
