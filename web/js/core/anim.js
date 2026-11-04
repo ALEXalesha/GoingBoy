@@ -23,7 +23,9 @@
 
   const G = 9.81;
   const ROOT_CH = ['root.x', 'root.y', 'root.z', 'root.yaw', 'root.pitch', 'root.roll'];
-  const FOOT_CH = /^foot_[LR]\.(x|z|lift|heel|yaw)$/;
+  const FOOT_CH = /^foot_[LR]\.(x|z|lift|heel|yaw|ik)$/;
+  const LEG_DOFS = {};
+  for (const s of ['L', 'R']) LEG_DOFS[s] = S.DOFS.map((d, i) => i).filter((i) => /^(hip|knee|ankle|toe)_/.test(S.DOFS[i].key) && S.DOFS[i].key.includes('_' + s + '.'));
   const known = (key) => ROOT_CH.includes(key) || FOOT_CH.test(key) || key in S.DOF;
 
   /** Наклоны PCHIP (Фрич - Бутленд) во внутренних узлах; на краях массива - 0. */
@@ -123,7 +125,12 @@
     p.root.pos = [val('root.x', 0), val('root.y', S.BONES[0].offset[1]), val('root.z', 0)];
     p.root.rot = [val('root.yaw', 0), val('root.pitch', 0), val('root.roll', 0)];
     for (const s of mv.feet) {
-      L.plantFoot(p, s, val(`foot_${s}.x`, 0), val(`foot_${s}.z`, 0), val(`foot_${s}.heel`, 0), val(`foot_${s}.yaw`, 0), val(`foot_${s}.lift`, 0));
+      // ik: 1 - стопа стоит в точке (нога по IK), 0 - нога по углам из ключей, между - смесь
+      const w = Math.min(1, Math.max(0, val(`foot_${s}.ik`, 1)));
+      if (w <= 0) continue;
+      const q = K.clone(p);
+      L.plantFoot(q, s, val(`foot_${s}.x`, 0), val(`foot_${s}.z`, 0), val(`foot_${s}.heel`, 0), val(`foot_${s}.yaw`, 0), val(`foot_${s}.lift`, 0));
+      for (const i of LEG_DOFS[s]) p.a[i] += (q.a[i] - p.a[i]) * w;
     }
     return p;
   }
@@ -192,9 +199,10 @@
     return null;
   }
 
-  function comY(mv, ph) {
+  /** Центр масс позы на опоре в фазе ph (запоминается: нужен на краях каждого полёта). */
+  function comAt(mv, ph) {
     const key = ph.toFixed(9);
-    if (!(key in mv.cache)) mv.cache[key] = K.com(K.fk(supported(mv, ((ph % 1) + 1) % 1)))[1];
+    if (!(key in mv.cache)) mv.cache[key] = K.com(K.fk(supported(mv, ((ph % 1) + 1) % 1)));
     return mv.cache[key];
   }
 
@@ -206,10 +214,11 @@
     if (fl) {
       const [a, b] = fl;
       const s = (ph - a) / (b - a);
-      const c0 = comY(mv, a), c1 = comY(mv, b);
+      const c0 = comAt(mv, a), c1 = comAt(mv, b);
       const ta = (ph - a) * mv.dur, tb = (b - ph) * mv.dur;
-      const target = c0 + (c1 - c0) * s + 0.5 * G * ta * tb;
-      p.root.pos[1] += target - K.com(K.fk(p))[1];
+      // по вертикали - парабола, по горизонтали - прямая с постоянной скоростью
+      const target = V.add(V.lerp(c0, c1, s), [0, 0.5 * G * ta * tb, 0]);
+      p.root.pos = V.add(p.root.pos, V.sub(target, K.com(K.fk(p))));
     }
     return p;
   }

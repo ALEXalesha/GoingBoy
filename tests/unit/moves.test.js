@@ -41,7 +41,7 @@ function inside(poly, q) {
 test('движения: есть все, у каждого своё имя', () => {
   const ids = MOVES.map((m) => m.id);
   assert.equal(new Set(ids).size, ids.length);
-  for (const id of ['walk', 'run', 'jump']) assert.ok(ids.includes(id), id);
+  for (const id of ['walk', 'run', 'jump', 'squat', 'pushup', 'pullup', 'lunge', 'kick', 'throw', 'flip', 'dance']) assert.ok(ids.includes(id), id);
 });
 
 for (const mv of compiled) {
@@ -92,6 +92,7 @@ for (const mv of compiled) {
         for (const side of mv.feet) {
           const ball = f.pos[S.BONE['toes_' + side].index];
           const ph = i / N;
+          if (A.channel(mv, `foot_${side}.ik`, ph, 1) < 1) continue; // нога идёт по углам (замах)
           const want = [A.channel(mv, `foot_${side}.x`, ph), L.BALL_H + A.channel(mv, `foot_${side}.lift`, ph), A.channel(mv, `foot_${side}.z`, ph)];
           assert.ok(V.dist(ball, want) < 0.002, `кадр ${i}: стопа ${side} ушла на ${V.dist(ball, want).toFixed(3)} м`);
         }
@@ -145,6 +146,10 @@ for (const mv of compiled) {
         const before = (comY(a) - comY(a - d)) / T, after = (comY(a + d) - comY(a)) / T;
         assert.ok(after > 0, `после отрыва вниз: ${after.toFixed(2)} м/с`);
         assert.ok(Math.abs(after - before) < 0.8, `рывок при отрыве: ${before.toFixed(2)} -> ${after.toFixed(2)} м/с`);
+        // по горизонтали в полёте скорость постоянна
+        const comX = (ph) => K.com(K.fk(A.sample(mv, ph)));
+        const v1 = V.sub(comX(a + (b - a) * 0.3), comX(a + (b - a) * 0.2)), v2 = V.sub(comX(a + (b - a) * 0.8), comX(a + (b - a) * 0.7));
+        assert.ok(Math.abs(v1[0] - v2[0]) < 1e-6 && Math.abs(v1[2] - v2[2]) < 1e-6, 'горизонтальная скорость в полёте меняется');
       }
     });
   }
