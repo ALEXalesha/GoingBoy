@@ -1,0 +1,134 @@
+// Законы нагрузки и подсветки. Главный: мышца горит, только когда она помогает суставу,
+// которому сейчас нужен момент её знака (сгибатель - когда сустав надо сгибать против
+// нагрузки), а сустав под заметной нагрузкой всегда держит хотя бы одна мышца.
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const { load, rng, SEED } = require('./helpers');
+
+const V = load('core/vec.js');
+const S = load('body/skeleton.js');
+const K = load('core/kinematics.js');
+const M = load('body/muscles.js');
+const Ld = load('core/load.js');
+const A = load('core/anim.js');
+const { MOVES } = load('core/moves.js');
+
+const W = S.MASS * 9.81;
+const compiled = MOVES.map((m) => A.compile(m));
+const at = (id, ph) => {
+  const mv = compiled.find((m) => m.id === id);
+  return Ld.analyzeAt((t) => A.at(mv, t), ph * mv.dur, 0.03, { bar: mv.hang && mv.hang.bar });
+};
+const act = (r, id) => r.act[M.MUSCLE[id]];
+const still = (p) => Ld.analyze({ prev: p, pose: p, next: p, h: 0.03 });
+
+test('стойка без движения: опоры несут ровно вес, моменты вокруг центра масс уравновешены', () => {
+  const r = still(K.restPose());
+  const F = r.contacts.reduce((s, c) => V.add(s, c.force), [0, 0, 0]);
+  assert.ok(Math.abs(F[1] - W) < 1e-3 && Math.abs(F[0]) < 1e-3 && Math.abs(F[2]) < 1e-3, `опоры ${F}`);
+  let Mo = [0, 0, 0];
+  for (const c of r.contacts) Mo = V.add(Mo, V.cross(V.sub(c.point, r.com), c.force));
+  assert.ok(V.len(Mo) < 0.5, 'момент опор ' + V.len(Mo));
+  for (const c of r.contacts) assert.ok(c.force[1] >= 0, 'пол только толкает');
+  // в стойке мышцы почти отдыхают
+  assert.ok(Math.max(...r.act) < 0.15, 'в стойке что-то горит: ' + Math.max(...r.act));
+});
+
+test('опоры: на одной ноге вся сила на ней, у отжимания руки несут больше ног (рычаг)', () => {
+  const p = K.poseFrom({ j: { 'hip_R.flex': 60, 'knee_R.flex': 90 } });
+  p.root.pos[1] -= K.lowest(K.fk(p));
+  const r = still(p);
+  const right = r.contacts.filter((c) => /_R$/.test(S.BONES[c.bone].name)).length;
+  assert.equal(right, 0, 'правая нога поднята');
+  const push = at('pushup', 0.05);
+  const sum = (re) => push.contacts.filter((c) => re.test(S.BONES[c.bone].name)).reduce((s, c) => s + c.force[1], 0);
+  const hands = sum(/^hand/), feet = sum(/^(foot|toes)/);
+  assert.ok(hands > feet * 1.3, `руки ${hands.toFixed(0)} Н, ноги ${feet.toFixed(0)} Н`);
+  assert.ok(Math.abs(hands + feet - W) < 0.15 * W, 'всего примерно вес');
+});
+
+test('вис на перекладине: держат только кисти, вместе - вес тела', () => {
+  const r = at('pullup', 0.05);
+  assert.ok(r.contacts.length >= 2 && r.contacts.every((c) => !c.floor), 'только перекладина');
+  const F = r.contacts.reduce((s, c) => s + c.force[1], 0);
+  assert.ok(Math.abs(F - W) < 0.1 * W, 'сила хвата ' + F);
+});
+
+// Главный закон подсветки - на каждом кадре каждого движения.
+test('подсветка согласована с моментом в суставе на всех кадрах всех движений', () => {
+  const bad = [];
+  for (const mv of compiled) {
+    for (let i = 0; i < 24; i++) {
+      const ph = i / 24;
+      const r = Ld.analyzeAt((t) => A.at(mv, t), ph * mv.dur, 0.03, { bar: mv.hang && mv.hang.bar });
+      // 1) горящая мышца помогает хотя бы одному суставу, которому нужен момент её знака
+      r.act.forEach((a, mi) => {
+        if (a <= 0.05) return;
+        const helps = r.arms[mi].some(({ dof, r: arm }) => M.DRIVEN[dof] && arm * r.tau[dof] > 0 && Math.abs(r.tau[dof]) >= Ld.TAU_MIN);
+        if (!helps) bad.push(`${mv.id}@${i}: ${M.MUSCLES[mi].id} горит, но никому не помогает`);
+      });
+      // 2) сустав под нагрузкой держит хотя бы одна мышца нужного знака
+      for (let d = 0; d < K.ND; d++) {
+        if (!M.DRIVEN[d] || Math.abs(r.tau[d]) < 5) continue;
+        const ag = r.arms.flatMap((list, mi) => list.filter((x) => x.dof === d && x.r * r.tau[d] > 0).map(() => mi));
+        if (ag.length && !ag.some((mi) => r.act[mi] > 0.01)) bad.push(`${mv.id}@${i}: ${S.DOFS[d].key} под нагрузкой, мышцы не горят`);
+      }
+      // 3) односуставной антагонист при заметном моменте не горит
+      for (let d = 0; d < K.ND; d++) {
+        if (!M.DRIVEN[d] || Math.abs(r.tau[d]) < 5) continue;
+        r.arms.forEach((list, mi) => {
+          if (list.length !== 1 || list[0].dof !== d) return;
+          if (list[0].r * r.tau[d] < 0 && r.act[mi] > 0.01) bad.push(`${mv.id}@${i}: антагонист ${M.MUSCLES[mi].id} горит`);
+        });
+      }
+    }
+  }
+  assert.deepEqual(bad.slice(0, 8), []);
+});
+
+// Эталонные позы: то, что знает любой тренер.
+test('эталонные позы: горят те мышцы, что работают в этом упражнении', () => {
+  const lit = (r, id) => act(r, id + '_L') > 0.1 && act(r, id + '_R') > 0.1;
+  const dark = (r, id) => act(r, id + '_L') < 0.02 && act(r, id + '_R') < 0.02;
+  const squat = at('squat', 0.5);
+  assert.ok(lit(squat, 'vasti'), 'присед: четырёхглавая');
+  assert.ok(lit(squat, 'gluteus_max') || lit(squat, 'hamstrings'), 'присед: разгибатели бедра');
+  assert.ok(dark(squat, 'triceps'), 'присед: трицепс отдыхает');
+  const push = at('pushup', 0.5);
+  assert.ok(lit(push, 'triceps') && lit(push, 'pectoralis'), 'отжимание: трицепс и грудная');
+  assert.ok(dark(push, 'biceps'), 'отжимание: бицепс отдыхает');
+  const pull = at('pullup', 0.35);
+  assert.ok(lit(pull, 'latissimus') && lit(pull, 'biceps'), 'подтягивание: широчайшая и бицепс');
+  assert.ok(dark(pull, 'deltoid_ant') && dark(pull, 'vasti'), 'подтягивание: передняя дельта и бёдра отдыхают');
+  const jump = at('jump', 0.4);
+  assert.ok(lit(jump, 'soleus') || lit(jump, 'gastrocnemius'), 'толчок прыжка: икры');
+  assert.ok(lit(jump, 'vasti'), 'толчок прыжка: четырёхглавая');
+  const lunge = at('lunge', 0.5);
+  assert.ok(act(lunge, 'gluteus_max_L') > 0.1 || act(lunge, 'hamstrings_L') > 0.1, 'выпад: разгибатели бедра передней ноги');
+  assert.ok(act(lunge, 'vasti_L') > 0.1 && act(lunge, 'vasti_R') > 0.1, 'выпад: четырёхглавые обеих ног');
+});
+
+test('что мышца делает: сокращается, держит, тормозит или отдыхает', () => {
+  assert.equal(Ld.state(0, -1), 'rest');
+  assert.equal(Ld.state(0.5, -0.1), 'shorten');
+  assert.equal(Ld.state(0.5, 0.1), 'brake');
+  assert.equal(Ld.state(0.5, 0), 'hold');
+  // подъём из приседа - четырёхглавая сокращается, спуск - тормозит
+  const up = at('squat', 0.7), down = at('squat', 0.3);
+  assert.equal(Ld.state(act(up, 'vasti_L'), up.vel[M.MUSCLE.vasti_L]), 'shorten');
+  assert.equal(Ld.state(act(down, 'vasti_L'), down.vel[M.MUSCLE.vasti_L]), 'brake');
+});
+
+test('без опор (полёт) силы опор нулевые; случайные стойки - пол только толкает', () => {
+  const r = rng(SEED + 30);
+  for (let n = 0; n < 50; n++) {
+    const p = K.poseFrom({ j: { 'hip_L.flex': r() * 60, 'knee_L.flex': r() * 60, 'hip_R.flex': r() * 60 - 20, 'lumbar.flex': r() * 30 } });
+    p.root.pos[1] -= K.lowest(K.fk(p));
+    for (const c of still(p).contacts) assert.ok(c.force[1] >= -1e-9);
+  }
+  const p = K.restPose(); p.root.pos[1] = 2;
+  const fl = still(p);
+  assert.equal(fl.contacts.length, 0);
+  assert.deepEqual(Ld.contactForces([], [0, 100, 0], [0, 1, 0]), []);
+});

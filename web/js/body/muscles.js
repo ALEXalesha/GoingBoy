@@ -107,6 +107,11 @@
     });
   }
 
+  // Степени свободы, момент которых раздаётся мышцам модели. Остальные (пронация, отклонения
+  // кисти, инверсия стопы, пальцы, повороты бедра и плеча вокруг оси, вынос ключицы) держат
+  // мышцы и связки, которых в модели нет, - их момент не зажигает чужие мышцы.
+  const DRIVEN = S.DOFS.map((d) => /\.(flex|abd|dorsi|elev)$/.test(d.key) || /^(lumbar|thoracic|neck)\.(lat|rot)$/.test(d.key));
+
   /** Верно ли объявленное действие в позе p (угол в диапазоне и условия на соседние углы). */
   function claimHolds(claim, p, dof) {
     if (p.a[dof] < claim.lo || p.a[dof] > claim.hi) return false;
@@ -119,5 +124,5 @@
   MUSCLES.forEach((m, i) => { MUSCLE[m.id] = i; });
   const GROUPS = Object.freeze(['hip', 'thigh', 'shin', 'trunk', 'shoulder', 'arm', 'neck']);
 
-  return Object.freeze({ MUSCLES, MUSCLE, GROUPS, claimHolds, BASES: Object.freeze(LEFT.map((m) => m.id)) });
+  return Object.freeze({ MUSCLES, MUSCLE, GROUPS, DRIVEN, claimHolds, BASES: Object.freeze(LEFT.map((m) => m.id)) });
 });

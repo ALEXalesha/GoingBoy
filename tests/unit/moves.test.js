@@ -85,6 +85,32 @@ for (const mv of compiled) {
     }
   });
 
+  if (mv.def.stance) {
+    test(`${mv.id}: в опорной фазе стопа стоит на полу`, () => {
+      const windows = mv.def.stance.flatMap(([side, a, b]) => (mv.def.half ? [[side, a, b], [side === 'L' ? 'R' : 'L', a + 0.5, b + 0.5]] : [[side, a, b]]));
+      for (const [side, a, b] of windows) {
+        const bones = [S.BONE['foot_' + side].index, S.BONE['toes_' + side].index];
+        for (let ph = a; ph <= b + 1e-9; ph += 0.01) {
+          const low = K.lowest(K.fk(A.sample(mv, ph)), bones);
+          assert.ok(low < 0.02, `фаза ${ph.toFixed(2)}: стопа ${side} в ${(low * 100).toFixed(1)} см над полом`);
+        }
+      }
+    });
+  }
+
+  if (mv.def.swing) {
+    test(`${mv.id}: маховая стопа не цепляет пол`, () => {
+      const windows = mv.def.swing.flatMap(([side, a, b]) => (mv.def.half ? [[side, a, b], [side === 'L' ? 'R' : 'L', a + 0.5, b + 0.5]] : [[side, a, b]]));
+      for (const [side, a, b] of windows) {
+        const bones = [S.BONE['foot_' + side].index, S.BONE['toes_' + side].index];
+        for (let ph = a; ph <= b + 1e-9; ph += 0.01) {
+          const low = K.lowest(K.fk(A.sample(mv, ph)), bones);
+          assert.ok(low > 0.01, `фаза ${ph.toFixed(2)}: маховая стопа ${side} в ${(low * 100).toFixed(1)} см над полом`);
+        }
+      }
+    });
+  }
+
   if (mv.feet.length) {
     test(`${mv.id}: стопа стоит там, где задано, и не скользит`, () => {
       poses.forEach((p, i) => {

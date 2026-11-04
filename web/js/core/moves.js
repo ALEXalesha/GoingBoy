@@ -27,28 +27,30 @@
 
   const MOVES = [
     // ---------------- ходьба: левая пятка касается пола в t = 0 ----------------
+    // Таз наклонён вперёд на 10° (как у идущего человека), поясница это выпрямляет.
     {
-      id: 'walk', group: 'locomotion', dur: 1.1, speed: 1.35, half: true,
-      base: { ...ARMS, 'lumbar.flex': 3, 'neck.flex': -3 },
+      id: 'walk', group: 'locomotion', dur: 1.1, speed: 1.35, half: true, stance: [['L', 0, 0.55]], swing: [['R', 0.1, 0.4]],
+      base: { ...ARMS, 'root.pitch': 10, 'lumbar.flex': -7, 'neck.flex': -3 },
       keys: [
-        { t: 0.0, j: { 'hip_L.flex': 30, 'knee_L.flex': 3, 'ankle_L.dorsi': 0, 'toe_L.ext': 0,
-          'hip_R.flex': -10, 'knee_R.flex': 10, 'ankle_R.dorsi': 5, 'toe_R.ext': 25,
+        { t: 0.0, j: { 'hip_L.flex': 30, 'knee_L.flex': 5, 'ankle_L.dorsi': 0, 'toe_L.ext': 0,
+          'hip_R.flex': -10, 'knee_R.flex': 15, 'ankle_R.dorsi': 0, 'toe_R.ext': 20,
           'shoulder_L.flex': -16, 'shoulder_R.flex': 18, 'elbow_L.flex': 12, 'elbow_R.flex': 28,
           'root.yaw': -5, 'thoracic.rot': 6, 'root.x': 0 } },
-        { t: 0.1, j: { 'hip_L.flex': 28, 'knee_L.flex': 15, 'ankle_L.dorsi': -5,
-          'hip_R.flex': -5, 'knee_R.flex': 38, 'ankle_R.dorsi': -15, 'toe_R.ext': 35 } },
-        { t: 0.2, j: { 'hip_L.flex': 20, 'knee_L.flex': 12, 'ankle_L.dorsi': 2,
-          'hip_R.flex': 15, 'knee_R.flex': 60, 'ankle_R.dorsi': -5, 'toe_R.ext': 5 } },
+        { t: 0.1, j: { 'hip_L.flex': 28, 'knee_L.flex': 18, 'ankle_L.dorsi': -5,
+          'hip_R.flex': -5, 'knee_R.flex': 40, 'ankle_R.dorsi': -15, 'toe_R.ext': 30 } },
+        { t: 0.2, j: { 'hip_L.flex': 18, 'knee_L.flex': 12, 'ankle_L.dorsi': 3,
+          'hip_R.flex': 15, 'knee_R.flex': 62, 'ankle_R.dorsi': 5, 'toe_R.ext': 5 } },
         { t: 0.25, j: { 'root.x': 0.02, 'shoulder_L.flex': 0, 'shoulder_R.flex': 0 } },
-        { t: 0.3, j: { 'hip_L.flex': 10, 'knee_L.flex': 2, 'ankle_L.dorsi': 6,
-          'hip_R.flex': 28, 'knee_R.flex': 50, 'ankle_R.dorsi': 2, 'toe_R.ext': 0 } },
-        { t: 0.4, j: { 'hip_L.flex': 0, 'knee_L.flex': 0, 'ankle_L.dorsi': 10, 'toe_L.ext': 15,
-          'hip_R.flex': 32, 'knee_R.flex': 20, 'ankle_R.dorsi': 2 } },
+        { t: 0.3, j: { 'hip_L.flex': 8, 'knee_L.flex': 4, 'ankle_L.dorsi': 8,
+          'hip_R.flex': 28, 'knee_R.flex': 55, 'ankle_R.dorsi': 8, 'toe_R.ext': 0 } },
+        { t: 0.35, j: { 'hip_R.flex': 31, 'knee_R.flex': 45, 'ankle_R.dorsi': 10 } },
+        { t: 0.4, j: { 'hip_L.flex': -2, 'knee_L.flex': 3, 'ankle_L.dorsi': 10, 'toe_L.ext': 10,
+          'hip_R.flex': 32, 'knee_R.flex': 24, 'ankle_R.dorsi': 4 } },
       ],
     },
     // ---------------- бег: опора 0..0.25, полёт 0.25..0.5 ----------------
     {
-      id: 'run', group: 'locomotion', dur: 0.7, speed: 3.2, half: true, flights: [[0.25, 0.5]],
+      id: 'run', group: 'locomotion', dur: 0.7, speed: 3.2, half: true, flights: [[0.25, 0.5]], stance: [['L', 0, 0.25]], swing: [['R', 0.03, 0.45]],
       base: { 'shoulder_L.abd': 10, 'shoulder_R.abd': 10, 'lumbar.flex': 8, 'neck.flex': -8, 'wrist_L.flex': 10, 'wrist_R.flex': 10 },
       keys: [
         { t: 0.0, j: { 'hip_L.flex': 25, 'knee_L.flex': 12, 'ankle_L.dorsi': 0, 'toe_L.ext': 0,
@@ -133,8 +135,8 @@
       keys: [
         { t: 0.0, j: { 'root.y': 0.845, 'root.z': 0.0, 'foot_R.heel': 45, 'lumbar.flex': 0, 'neck.flex': 0 } },
         { t: 0.1, j: { 'root.y': 0.845, 'root.z': 0.0, 'foot_R.heel': 45 } },
-        { t: 0.45, j: { 'root.y': 0.52, 'root.z': -0.02, 'foot_R.heel': 75, 'lumbar.flex': 4, 'neck.flex': -4 } },
-        { t: 0.55, j: { 'root.y': 0.52, 'root.z': -0.02, 'foot_R.heel': 75 } },
+        { t: 0.45, j: { 'root.y': 0.52, 'root.z': 0.04, 'foot_R.heel': 75, 'lumbar.flex': 4, 'neck.flex': -4 } },
+        { t: 0.55, j: { 'root.y': 0.52, 'root.z': 0.04, 'foot_R.heel': 75 } },
         { t: 0.9, j: { 'root.y': 0.845, 'root.z': 0.0, 'foot_R.heel': 45, 'lumbar.flex': 0, 'neck.flex': 0 } },
       ],
     },
