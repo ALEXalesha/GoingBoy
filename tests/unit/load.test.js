@@ -216,3 +216,19 @@ test('лазанье: кисти держат перекладины, стопы
     assert.ok(r.contacts.every((c) => c.point[1] > 0.3), 'пола на лестнице нет');
   }
 });
+
+test('мышца не горит из-за плеча меньше 3 мм: такое плечо не даёт заметного момента', () => {
+  const bad = [];
+  for (const mv of compiled) {
+    for (let i = 0; i < 24; i++) {
+      const ph = i / 24;
+      const r = Ld.analyzeAt((t) => A.at(mv, t), ph * mv.dur, 0.03, A.envAt(mv, ph));
+      r.act.forEach((a, mi) => {
+        if (a <= 0.05) return;
+        const real = r.arms[mi].some(({ dof, r: arm }) => M.DRIVEN[dof] && arm * r.tau[dof] > 0 && Math.abs(arm) >= Ld.ARM_MIN && Math.abs(r.tau[dof]) >= Ld.TAU_MIN);
+        if (!real) bad.push(`${mv.id}@${i}: ${M.MUSCLES[mi].id} ${Math.round(a * 100)}%`);
+      });
+    }
+  }
+  assert.deepEqual(bad.slice(0, 6), []);
+});

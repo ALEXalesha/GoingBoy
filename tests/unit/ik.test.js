@@ -103,3 +103,15 @@ test('пока руки хватает, корпус почти не гнётс�
   }
   assert.ok(calm / n >= 0.85, `корпус спокоен в ${calm} из ${n}`);
 });
+
+test('своя поза: ни одна часть тела не уходит под пол, а не только ручка', () => {
+  const r = rng(SEED + 45);
+  for (const name of Object.keys(IK.HANDLES)) {
+    for (let k = 0; k < 40; k++) {
+      const target = [(r() - 0.5) * 1.2, r() * 0.6 - 0.5, (r() - 0.5) * 1.2];
+      const res = IK.drag(K.restPose(), name, target);
+      const low = K.lowest(K.fk(res.pose));
+      assert.ok(low > -0.005, `${name} к ${target.map((x) => x.toFixed(2))}: тело на ${low.toFixed(3)} м под полом`);
+    }
+  }
+});

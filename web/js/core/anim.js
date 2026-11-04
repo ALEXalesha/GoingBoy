@@ -283,9 +283,13 @@
     return q;
   }
 
-  /** Включить движение (или неподвижную позу: still) с переходом от того, что сейчас. */
-  function play(pl, mv, still) {
-    pl.from = pl.mv || pl.still ? current(pl) : null;
+  /**
+   * Включить движение (или неподвижную позу: still) с переходом от того, что сейчас. from -
+   * поза, которая на самом деле видна (своя поза, режим «за курсором»): проигрыватель о ней
+   * не знает, и без неё переход начался бы со старой позы проигрывателя.
+   */
+  function play(pl, mv, still, from) {
+    pl.from = from ? K.clone(from) : pl.mv || pl.still ? current(pl) : null;
     pl.fade = pl.from ? 0 : FADE;
     pl.mv = mv || null;
     pl.still = mv ? null : (still ? K.clone(still) : K.restPose());

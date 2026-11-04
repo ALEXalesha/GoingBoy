@@ -33,6 +33,26 @@ test('слои: кожа, мышцы, кости переключаются кн
   await expect(page.locator('#layers [data-layer="skin"]')).toHaveClass(/on/);
 });
 
+test('переход из своей позы: первый кадр - видимая поза, подсветка - по смешанной позе', async ({ page }) => {
+  await open(page);
+  await freeze(page, 'pushup', 0.5);
+  await page.click('#moves [data-move="pose"]');
+  await page.click('#pose-reset');
+  await page.evaluate(() => { GB.app.setMove('squat'); GB.app.setPaused(true); GB.app.tick(0); });
+  const r = await page.evaluate(() => ({ pelvis: GB.app.pose().root.pos[1], fade: GB.app.player.fade }));
+  expect(r.fade).toBe(0);
+  expect(r.pelvis, 'стоит, а не лежит в отжимании').toBeGreaterThan(0.85);
+  // середина перехода: подсветка посчитана по той позе, что показана
+  const same = await page.evaluate(() => {
+    GB.app.player.fade = 0.2; GB.app.tick(0);
+    const pl = GB.app.player;
+    const at = (t) => GB.Anim.current({ ...pl, time: t, fade: Math.max(0, pl.fade + (t - pl.time)) });
+    const an = GB.Load.analyzeAt(at, pl.time, 0.03, GB.Anim.envAt(pl.mv, pl.time / pl.mv.dur));
+    return [...GB.app.analysis().act].every((a, i) => Math.abs(a - an.act[i]) < 1e-9);
+  });
+  expect(same).toBe(true);
+});
+
 test('подсветка в окне - та же, что считает ядро (не наугад)', async ({ page }) => {
   await open(page);
   await freeze(page, 'pushup', 0.5);

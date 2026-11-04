@@ -54,10 +54,10 @@ function createWindow() {
   win.webContents.on('will-navigate', (e) => e.preventDefault());
 }
 
-// Нет видеокарты (виртуальная машина, старый драйвер) - WebGL рисует программно (SwiftShader).
-// Это безопасно: программа открывает только свои файлы и никуда не уходит со страницы.
+// Нет видеокарты (виртуальная машина, драйвер в чёрном списке) - WebGL рисует программно
+// (SwiftShader), а не отказывает. Чёрный список драйверов не трогаем: плохой драйвер так и
+// остаётся выключенным. Это безопасно: программа открывает только свои файлы и никуда не уходит.
 app.commandLine.appendSwitch('enable-unsafe-swiftshader');
-app.commandLine.appendSwitch('ignore-gpu-blocklist');
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();

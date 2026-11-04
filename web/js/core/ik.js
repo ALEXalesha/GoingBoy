@@ -75,14 +75,16 @@
     for (const st of starts) {
       const r = dls(st, h, name, goal, iters);
       r.effort = effort(r.pose);
-      if (!res || r.dist < res.dist - 1e-3 || (Math.abs(r.dist - res.dist) <= 1e-3 && r.effort < res.effort)) res = r;
+      if (!res || r.cost < res.cost - 1e-3 || (Math.abs(r.cost - res.cost) <= 1e-3 && r.effort < res.effort)) res = r;
     }
     return { pose: res.pose, dist: res.dist, target: goal };
   }
 
   function dls(p, h, name, goal, iters) {
     let lambda = 0.05;
-    let best = { a: Float64Array.from(p.a), d: V.dist(effector(p, name), goal) };
+    // цена шага: расстояние до цели и штраф за то, что тело ушло под пол (носок, пальцы)
+    const cost = (q) => V.dist(effector(q, name), goal) + 10 * Math.max(0, -K.lowest(K.fk(q)));
+    let best = { a: Float64Array.from(p.a), d: cost(p) };
     for (let it = 0; it < iters && best.d > 5e-4; it++) {
       const f = K.fk(p);
       const e = V.sub(goal, K.point(f, h.boneIndex, h.at));
@@ -98,12 +100,12 @@
         const step = (h.w[k] * V.dot(c, x)) / V.DEG;
         p.a[i] = Math.min(d.max, Math.max(d.min, p.a[i] + Math.max(-15, Math.min(15, step))));
       });
-      const dNow = V.dist(effector(p, name), goal);
+      const dNow = cost(p);
       if (dNow < best.d) { best = { a: Float64Array.from(p.a), d: dNow }; lambda = Math.max(0.01, lambda * 0.7); }
       else { p.a.set(best.a); lambda *= 2; }
     }
     p.a.set(best.a);
-    return { pose: p, dist: best.d };
+    return { pose: p, dist: V.dist(effector(p, name), goal), cost: best.d };
   }
 
   return { HANDLES, FLOOR, effector, drag };

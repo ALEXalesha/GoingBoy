@@ -278,3 +278,15 @@ test('описание движения с ошибкой в имени кана
   assert.throws(() => A.compile({ id: 'x', dur: 1, keys: [{ t: 0, j: { 'knee_X.flex': 1 } }] }));
   assert.throws(() => A.compile({ id: 'x', dur: 1, base: { 'elbow.bend': 1 }, keys: [{ t: 0, j: {} }] }));
 });
+
+test('проигрыватель: переход в движение начинается с той позы, что видна сейчас (явная поза from)', () => {
+  const pl = A.createPlayer();
+  const pushup = compiled.find((m) => m.id === 'pushup'), squat = compiled.find((m) => m.id === 'squat');
+  A.play(pl, pushup);
+  A.step(pl, 1);
+  const standing = K.restPose();
+  // окно показывало свою позу (стоит), проигрыватель о ней не знал - переход должен идти от неё
+  A.play(pl, squat, null, standing);
+  const p = A.current(pl);
+  assert.ok(Math.abs(p.root.pos[1] - standing.root.pos[1]) < 1e-9, 'первый кадр - видимая поза, а не старое отжимание');
+});

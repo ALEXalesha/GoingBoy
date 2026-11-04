@@ -20,7 +20,7 @@ const ROOT = path.join(__dirname, '..');
 const MUTANTS = [
   // ---------- подсветка мышц ----------
   { id: 'glow-random', file: 'web/js/core/load.js', from: '    for (let mi = 0; mi < NM; mi++) per[mi] = Math.min(1, Math.max(0, per[mi]));', to: '    for (let mi = 0; mi < NM; mi++) per[mi] = Math.random();', unit: 'подсветка согласована' },
-  { id: 'glow-antagonist', file: 'web/js/core/load.js', from: 'const ag = list.filter(([, k]) => k * t > 0);', to: 'const ag = list.filter(([, k]) => k !== 0);', unit: 'подсветка согласована' },
+  { id: 'glow-antagonist', file: 'web/js/core/load.js', from: 'const ag = list.filter(([mi, k]) => k * t > 0 && ', to: 'const ag = list.filter(([mi, k]) => k !== 0 && ', unit: 'подсветка согласована' },
   { id: 'glow-undriven', file: 'web/js/core/load.js', from: 'if (!M.DRIVEN[i] || Math.abs(t) < TAU_MIN) return;', to: 'if (Math.abs(t) < TAU_MIN) return;', unit: 'подсветка согласована|эталонные позы|в стойке' },
   { id: 'floor-pulls', file: 'web/js/core/load.js', from: 'const bad = idx.filter((k) => list[k].floor && out[k][1] < 0);', to: 'const bad = [];', unit: 'пол только толкает|стойка без движения' },
   { id: 'no-moment-balance', file: 'web/js/core/load.js', from: 'const forces = contactForces(list, Rsum, com, Mc);', to: 'const forces = contactForces(list, Rsum, com);', unit: 'уравновешивают' },
@@ -54,7 +54,7 @@ const MUTANTS = [
   { id: 'ik-into-floor', file: 'web/js/core/ik.js', from: 'const goal = [target[0], Math.max(FLOOR[name], target[1]), target[2]];', to: 'const goal = target.slice();', unit: 'не тащит ручку в пол' },
   { id: 'ik-no-limb-start', file: 'web/js/core/ik.js', from: '      starts.push(K.clampPose(q));', to: '', unit: 'достижимая цель|аналитическая' },
   { id: 'ik-one-branch', file: 'web/js/core/ik.js', from: 'for (const branch of [0, 1]) {', to: 'for (const branch of [0]) {', unit: 'корпус почти не гнётся' },
-  { id: 'ik-effort-ignored', file: 'web/js/core/ik.js', from: '(Math.abs(r.dist - res.dist) <= 1e-3 && r.effort < res.effort)', to: 'false', unit: 'корпус почти не гнётся' },
+  { id: 'ik-effort-ignored', file: 'web/js/core/ik.js', from: '(Math.abs(r.cost - res.cost) <= 1e-3 && r.effort < res.effort)', to: 'false', unit: 'корпус почти не гнётся' },
   { id: 'ik-no-damping', file: 'web/js/core/ik.js', from: '      for (let r = 0; r < 3; r++) JW[r][r] += lambda * lambda;', to: '', unit: 'достижимая цель|недостижимая|аналитическая' },
   // ---------- подписи ----------
   { id: 'labels-overlap', file: 'web/js/core/labels.js', from: '    for (let i = 1; i < list.length; i++) ys[i] = Math.max(ys[i], ys[i - 1] + list[i - 1].h + SPACE);', to: '', unit: 'подписи: 2000' },
@@ -77,6 +77,12 @@ const MUTANTS = [
   { id: 'follow-no-blend', file: 'web/js/core/follow.js', from: '      p = K.blend(st.from, p, w * w * (3 - 2 * w));', to: '', unit: 'случайная игрушка' },
   { id: 'page-toy-not-aimed', file: 'web/js/app/app.js', from: "    if (mode === 'follow') aimToy(e.clientX, e.clientY);", to: '', web: 'за курсором' },
   { id: 'page-ladder-hidden', file: 'web/js/app/app.js', from: '    ladder.visible = !!(mv && mv.def.ladder);', to: '    ladder.visible = false;', web: 'предметы' },
+  // ---------- по находкам ревьюера ----------
+  { id: 'arm-min-off', file: 'web/js/core/load.js', from: ' && Math.abs(k) >= ARM_MIN * M.MUSCLES[mi].fmax', to: '', unit: 'плеча меньше 3 мм' },
+  { id: 'ik-floor-cost-off', file: 'web/js/core/ik.js', from: ' + 10 * Math.max(0, -K.lowest(K.fk(q)))', to: '', unit: 'ни одна часть тела' },
+  { id: 'play-from-ignored', file: 'web/js/core/anim.js', from: 'pl.from = from ? K.clone(from) : pl.mv', to: 'pl.from = pl.mv', unit: 'явная поза from' },
+  { id: 'page-transition-glow-cached', file: 'web/js/app/app.js', from: '    if (player.from && player.fade < A.FADE) {', to: '    if (false) {', web: 'переход из своей позы' },
+  { id: 'page-from-not-passed', file: 'web/js/app/app.js', from: "A.play(player, MOVE[id], null, mode !== 'move' ? now : null);", to: 'A.play(player, MOVE[id]);', web: 'переход из своей позы' },
   // ---------- окно программы ----------
   { id: 'window-off-screen', file: 'electron/window-state.js', from: 'const ny = Math.max(best.y, Math.min(y, best.y + best.height - height));', to: 'const ny = y;', unit: 'окно:' },
   // ---------- страница ----------

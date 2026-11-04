@@ -20,8 +20,9 @@ test('программа: открывается, показывает GoingBoy,
   const { app, win, errors } = await launch();
   await expect(win).toHaveTitle(/GoingBoy/);
   const moves = await win.evaluate(() => GB.app.MOVES);
-  expect(moves.length).toBe(11);
-  for (const m of [...moves, 'pose']) {
+  expect(moves).toEqual(await win.evaluate(() => GB.Moves.MOVES.map((m) => m.id)));
+  expect(moves.length).toBeGreaterThanOrEqual(14);
+  for (const m of [...moves, 'pose', 'follow']) {
     const ok = await win.evaluate((id) => { GB.app.setMove(id); for (let i = 0; i < 10; i++) GB.app.tick(1 / 30); return GB.app.state().move === id; }, m);
     expect(ok, m).toBe(true);
   }

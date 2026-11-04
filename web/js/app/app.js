@@ -185,6 +185,11 @@
       return poseAn.an;
     }
     const mv = player.mv;
+    if (player.from && player.fade < A.FADE) {
+      // переход: тело - смесь двух поз, нагрузка - по этой смеси (кэш фаз тут не годится)
+      const at = (t) => A.current({ ...player, time: t, fade: Math.max(0, player.fade + (t - player.time)) });
+      return Ld.analyzeAt(at, player.time, 0.03, A.envAt(mv, player.time / mv.dur));
+    }
     const bin = ((Math.round((player.time / mv.dur) * BINS) % BINS) + BINS) % BINS;
     const key = mv.id + ':' + bin;
     if (!cache.has(key)) {
@@ -286,9 +291,9 @@
       mode = 'pose';
     } else {
       if (!MOVE[id]) return;
-      if (mode !== 'move') { A.play(player, null, now); }
+      // переход - от позы, которая видна сейчас (в своей позе и «за курсором» её знает окно)
+      A.play(player, MOVE[id], null, mode !== 'move' ? now : null);
       mode = 'move';
-      A.play(player, MOVE[id]);
       settings.move = id;
       persist();
     }
