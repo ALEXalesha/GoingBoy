@@ -642,7 +642,7 @@
     setLang: (l) => { settings.lang = l; persist(); applyLang(); },
     setPhase: (ph) => { player.time = ph * player.mv.dur; player.fade = A.FADE; tick(0); },
     setCamera: (o) => { Object.assign(cam, o); tick(0); },
-    camera: () => ({ az: cam.az, el: cam.el, dist: cam.dist, pos: camera.position.toArray() }),
+    camera: () => ({ az: cam.az, el: cam.el, dist: cam.dist, pos: camera.position.toArray(), eff: camera.position.distanceTo(cam.target) }),
     hoverAt: (x, y) => { hover = pick(x, y); body.setHover(hover); tick(0); return hover; },
     setHover: (h) => { hover = h; body.setHover(h); tick(0); },
     tick: (dt = 0) => tick(dt),

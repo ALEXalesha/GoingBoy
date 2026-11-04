@@ -54,7 +54,7 @@
     // ---------- плечевой пояс и плечо ----------
     { id: 'pectoralis', group: 'shoulder', fmax: 1000, act: { 'shoulder.abd': [-1, -30, 85], 'shoulder.rot': 1 },
       path: [['chest', [0.03, 0.12, 0.12]], ['wrap', 'upperarm', [0, 0, 1], 0.05], ['upperarm', [0.02, -0.08, 0.035]]] },
-    { id: 'latissimus', group: 'shoulder', fmax: 1100, act: { 'shoulder.flex': [-1, -20, 180, { 'shoulder.abd': [-30, 80] }], 'shoulder.abd': [-1, -10, 180] },
+    { id: 'latissimus', group: 'shoulder', fmax: 1100, act: { 'shoulder.flex': [-1, -20, 180, { 'shoulder.abd': [-30, 80] }], 'shoulder.abd': [-1, -10, 180, { 'shoulder.flex': [-60, 150] }] },
       path: [['spine', [0.05, 0.05, -0.09]], ['wrap', 'upperarm', [0.3, -0.8, -0.5], 0.11], ['upperarm', [-0.01, -0.07, 0.015]]] },
     { id: 'deltoid_ant', group: 'shoulder', fmax: 600, act: { 'shoulder.flex': [1, -60, 105, { 'shoulder.abd': [-30, 80] }] },
       path: [['clavicle', [0.13, 0.05, 0.02]], ['wrap', 'upperarm', [0, 0, 1], 0.05], ['upperarm', [0.02, -0.14, 0.025]]] },

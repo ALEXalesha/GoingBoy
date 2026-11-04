@@ -83,3 +83,23 @@ test('нога IK = аналитическая постановка ноги: т
     assert.ok(res.dist < 0.01, `не дошёл: ${res.dist}`);
   }
 });
+
+test('пока руки хватает, корпус почти не гнётся: сначала тянется сама рука', () => {
+  const r = rng(SEED + 44);
+  const spine = ['lumbar.flex', 'lumbar.lat', 'thoracic.flex', 'thoracic.lat'].map((k) => S.DOF[k]);
+  let calm = 0, n = 0;
+  for (const name of ['hand_L', 'hand_R']) {
+    const s = name.slice(-1);
+    for (let k = 0; k < 60; k++) {
+      // цель - куда кисть достаёт одной рукой (позвоночник и ключица в покое)
+      const p = K.restPose();
+      for (const key of [`shoulder_${s}.flex`, `shoulder_${s}.abd`, `elbow_${s}.flex`]) { const d = S.DOFS[S.DOF[key]]; p.a[S.DOF[key]] = d.min + r() * (d.max - d.min) * 0.8; }
+      const target = IK.effector(p, name);
+      if (target[1] < 0.2) continue;
+      const res = IK.drag(K.restPose(), name, target);
+      n++;
+      if (res.dist < 0.01 && spine.every((i) => Math.abs(res.pose.a[i]) < 6)) calm++;
+    }
+  }
+  assert.ok(calm / n >= 0.85, `корпус спокоен в ${calm} из ${n}`);
+});

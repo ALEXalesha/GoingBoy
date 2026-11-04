@@ -15,10 +15,10 @@
   'use strict';
 
   // Ручки, за которые можно тянуть: кость, точка на ней, суставы цепочки и их вес
-  const SPINE = { lumbar: 0.25, thoracic: 0.35 };
+  const SPINE = { lumbar: 0.03, thoracic: 0.05 };
   const HANDLES = {};
   for (const s of ['L', 'R']) {
-    HANDLES['hand_' + s] = { bone: 'hand_' + s, at: [0, -0.08, 0], limb: 'arm_' + s, joints: { [`elbow_${s}`]: 1, [`shoulder_${s}`]: 1, [`sc_${s}`]: 0.3, ...SPINE } };
+    HANDLES['hand_' + s] = { bone: 'hand_' + s, at: [0, -0.08, 0], limb: 'arm_' + s, joints: { [`elbow_${s}`]: 1, [`shoulder_${s}`]: 1, [`sc_${s}`]: 0.1, ...SPINE } };
     HANDLES['foot_' + s] = { bone: 'foot_' + s, at: [0, -0.04, 0.05], limb: 'leg_' + s, joints: { [`knee_${s}`]: 1, [`hip_${s}`]: 1, [`ankle_${s}`]: 0.2 } };
   }
   HANDLES.head = { bone: 'head', at: [0, 0.1, 0.02], joints: { neck: 1, atlas: 0.5, ...SPINE } };
@@ -56,16 +56,26 @@
     const starts = [K.clone(p0)];
     if (h.limb) {
       // второй старт: конечность поставлена аналитически (limb.js), дальше уточняет DLS
-      const q = K.clone(p0);
-      const f = K.fk(q);
-      const end = f.pos[L.CHAINS[h.limb].end];
-      L.reach(q, h.limb, V.sub(goal, V.sub(K.point(f, h.boneIndex, h.at), end)));
-      starts.push(K.clampPose(q));
+      // (ручка дальше конца цепочки - на кисти/стопе; несколько повторов, пока направление
+      // кисти после постановки не перестанет меняться)
+      for (const branch of [0, 1]) {
+        const q = K.clone(p0);
+        for (let k = 0; k < 4; k++) {
+          const f = K.fk(q);
+          const end = f.pos[L.CHAINS[h.limb].end];
+          L.reach(q, h.limb, V.sub(goal, V.sub(K.point(f, h.boneIndex, h.at), end)), branch);
+        }
+        starts.push(K.clampPose(q));
+      }
     }
+    // из стартов - ближайший к цели; если оба дошли - тот, что меньше тронул корпус
+    // (изменение углов, взвешенное обратно весу сустава)
+    const effort = (q) => h.dofs.reduce((s, i, k) => s + ((q.a[i] - p0.a[i]) ** 2) / h.w[k], 0);
     let res = null;
     for (const st of starts) {
       const r = dls(st, h, name, goal, iters);
-      if (!res || r.dist < res.dist - 1e-4) res = r;
+      r.effort = effort(r.pose);
+      if (!res || r.dist < res.dist - 1e-3 || (Math.abs(r.dist - res.dist) <= 1e-3 && r.effort < res.effort)) res = r;
     }
     return { pose: res.pose, dist: res.dist, target: goal };
   }

@@ -138,6 +138,10 @@ test('камера: тянем фон - поворот; колесо - ближ�
   await page.mouse.dblclick(box.x + 40, box.y + 40);
   const c3 = await page.evaluate(() => GB.app.camera());
   expect(c3.az).toBeCloseTo(0.6, 5);
+  // высокое тело (вис на перекладине) - камера отходит, чтобы оно влезало
+  const far = async (m) => { await freeze(page, m, 0.1); return page.evaluate(() => { const c = GB.app.camera(); return c.eff; }); };
+  const walk = await far('walk'), hang = await far('pullup');
+  expect(hang).toBeGreaterThan(walk * 1.15);
 });
 
 test('пауза, скорость, перемотка, клавиши', async ({ page }) => {
@@ -218,7 +222,10 @@ test('узкое окно 360×640: нет прокрутки вбок, кноп
     expect(b && b.x >= 0 && b.x + b.width <= 360 && b.y + b.height <= 640, sel).toBe(true);
   }
   const canvas = await page.locator('#view').boundingBox();
-  expect(canvas.height).toBeGreaterThan(200);
+  expect(canvas.height).toBeGreaterThan(320);
+  // шапка с меню движений - одна строка с прокруткой, а не стопка кнопок
+  const top = await page.locator('#top').boundingBox();
+  expect(top.height).toBeLessThanOrEqual(100);
   await page.click('#panel-toggle');
   await expect(page.locator('#panel')).toHaveClass(/open/);
 });

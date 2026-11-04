@@ -32,8 +32,9 @@
   /**
    * Поставить конец цепочки (голеностоп или запястье) в мировую точку target.
    * Меняет углы позы p на месте; возвращает расстояние от достигнутой точки до цели.
+   * branch 1 - вторая ветвь решения (рука поднята в сторону выше 90°).
    */
-  function reach(p, name, target) {
+  function reach(p, name, target, branch = 0) {
     const c = CHAINS[name];
     const f = K.fk(p);
     const par = f.rot[S.PARENT[c.b1]];
@@ -50,7 +51,8 @@
     const ux = -B * Math.sin(rho), uz = -B * Math.cos(rho);
     // Rz(gamma): x = ux cos g + A sin g
     const R = Math.hypot(ux, A), phi = Math.atan2(ux, A);
-    const g = Math.asin(clamp(tt[0] / R, -1, 1)) - phi;
+    const g0 = Math.asin(clamp(tt[0] / R, -1, 1));
+    const g = (branch ? Math.PI - g0 : g0) - phi;
     const uy = ux * Math.sin(g) - A * Math.cos(g);
     const b = Math.atan2(tt[2], tt[1]) - Math.atan2(uz, uy);
     p.a[c.knee] = k / V.DEG;

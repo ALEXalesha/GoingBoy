@@ -11,14 +11,11 @@ async function open(page, { lang = 'ru', settings = null } = {}) {
   const errors = [];
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
-  await page.addInitScript(([s, l]) => {
-    if (!sessionStorage.getItem('gb-test-init')) {
-      sessionStorage.setItem('gb-test-init', '1');
-      localStorage.clear();
-      localStorage.setItem('goingboy:settings', JSON.stringify({ lang: l, ...(s || {}) }));
-    }
-  }, [settings, lang]);
+  // чистые настройки: открыть, записать, перезагрузить (без скрипта на каждую загрузку -
+  // иначе перезагрузка в самом тесте снова сбрасывала бы настройки)
   await page.goto(URL);
+  await page.evaluate(([s, l]) => { localStorage.clear(); localStorage.setItem('goingboy:settings', JSON.stringify({ lang: l, ...(s || {}) })); }, [settings, lang]);
+  await page.reload();
   await page.waitForFunction(() => window.GB && window.GB.app && window.GB.app.state().fps >= 0);
   return errors;
 }

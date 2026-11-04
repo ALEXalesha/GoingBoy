@@ -5,3 +5,4 @@ dist/
 *.tmp
 /local/
 docs/dev/
+coverage/

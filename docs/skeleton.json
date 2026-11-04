@@ -1,0 +1,719 @@
+{
+ "units": "meters",
+ "up": "+Y",
+ "forward": "+Z",
+ "left": "+X",
+ "restPose": "standing, arms down along the body, palms to the thighs",
+ "bones": [
+  {
+   "name": "pelvis",
+   "parent": null,
+   "head": [
+    0,
+    0.95,
+    0
+   ],
+   "tail": [
+    0,
+    1.02,
+    0
+   ]
+  },
+  {
+   "name": "spine",
+   "parent": "pelvis",
+   "head": [
+    0,
+    1.02,
+    0
+   ],
+   "tail": [
+    0,
+    1.22,
+    0
+   ]
+  },
+  {
+   "name": "chest",
+   "parent": "spine",
+   "head": [
+    0,
+    1.22,
+    0
+   ],
+   "tail": [
+    0,
+    1.45,
+    0
+   ]
+  },
+  {
+   "name": "neck",
+   "parent": "chest",
+   "head": [
+    0,
+    1.45,
+    0
+   ],
+   "tail": [
+    0,
+    1.55,
+    0
+   ]
+  },
+  {
+   "name": "head",
+   "parent": "neck",
+   "head": [
+    0,
+    1.55,
+    0
+   ],
+   "tail": [
+    0,
+    1.75,
+    0
+   ]
+  },
+  {
+   "name": "clavicle_L",
+   "parent": "chest",
+   "head": [
+    0.02,
+    1.39,
+    0.03
+   ],
+   "tail": [
+    0.19,
+    1.41,
+    0
+   ]
+  },
+  {
+   "name": "upperarm_L",
+   "parent": "clavicle_L",
+   "head": [
+    0.19,
+    1.41,
+    0
+   ],
+   "tail": [
+    0.19,
+    1.11,
+    0
+   ]
+  },
+  {
+   "name": "forearm_L",
+   "parent": "upperarm_L",
+   "head": [
+    0.19,
+    1.11,
+    0
+   ],
+   "tail": [
+    0.19,
+    0.85,
+    0
+   ]
+  },
+  {
+   "name": "hand_L",
+   "parent": "forearm_L",
+   "head": [
+    0.19,
+    0.85,
+    0
+   ],
+   "tail": [
+    0.19,
+    0.67,
+    0
+   ]
+  },
+  {
+   "name": "thigh_L",
+   "parent": "pelvis",
+   "head": [
+    0.09,
+    0.92,
+    0
+   ],
+   "tail": [
+    0.09,
+    0.5,
+    0
+   ]
+  },
+  {
+   "name": "shin_L",
+   "parent": "thigh_L",
+   "head": [
+    0.09,
+    0.5,
+    0
+   ],
+   "tail": [
+    0.09,
+    0.08,
+    0
+   ]
+  },
+  {
+   "name": "foot_L",
+   "parent": "shin_L",
+   "head": [
+    0.09,
+    0.08,
+    0
+   ],
+   "tail": [
+    0.09,
+    0.025,
+    0.14
+   ]
+  },
+  {
+   "name": "toes_L",
+   "parent": "foot_L",
+   "head": [
+    0.09,
+    0.025,
+    0.14
+   ],
+   "tail": [
+    0.09,
+    0.015,
+    0.2
+   ]
+  },
+  {
+   "name": "clavicle_R",
+   "parent": "chest",
+   "head": [
+    -0.02,
+    1.39,
+    0.03
+   ],
+   "tail": [
+    -0.19,
+    1.41,
+    0
+   ]
+  },
+  {
+   "name": "upperarm_R",
+   "parent": "clavicle_R",
+   "head": [
+    -0.19,
+    1.41,
+    0
+   ],
+   "tail": [
+    -0.19,
+    1.11,
+    0
+   ]
+  },
+  {
+   "name": "forearm_R",
+   "parent": "upperarm_R",
+   "head": [
+    -0.19,
+    1.11,
+    0
+   ],
+   "tail": [
+    -0.19,
+    0.85,
+    0
+   ]
+  },
+  {
+   "name": "hand_R",
+   "parent": "forearm_R",
+   "head": [
+    -0.19,
+    0.85,
+    0
+   ],
+   "tail": [
+    -0.19,
+    0.67,
+    0
+   ]
+  },
+  {
+   "name": "thigh_R",
+   "parent": "pelvis",
+   "head": [
+    -0.09,
+    0.92,
+    0
+   ],
+   "tail": [
+    -0.09,
+    0.5,
+    0
+   ]
+  },
+  {
+   "name": "shin_R",
+   "parent": "thigh_R",
+   "head": [
+    -0.09,
+    0.5,
+    0
+   ],
+   "tail": [
+    -0.09,
+    0.08,
+    0
+   ]
+  },
+  {
+   "name": "foot_R",
+   "parent": "shin_R",
+   "head": [
+    -0.09,
+    0.08,
+    0
+   ],
+   "tail": [
+    -0.09,
+    0.025,
+    0.14
+   ]
+  },
+  {
+   "name": "toes_R",
+   "parent": "foot_R",
+   "head": [
+    -0.09,
+    0.025,
+    0.14
+   ],
+   "tail": [
+    -0.09,
+    0.015,
+    0.2
+   ]
+  }
+ ],
+ "joints": [
+  {
+   "id": "lumbar",
+   "bone": "spine",
+   "dofs": [
+    {
+     "name": "flex",
+     "axis": "x",
+     "sign": 1,
+     "min": -25,
+     "max": 45
+    },
+    {
+     "name": "lat",
+     "axis": "z",
+     "sign": -1,
+     "min": -20,
+     "max": 20
+    },
+    {
+     "name": "rot",
+     "axis": "y",
+     "sign": 1,
+     "min": -15,
+     "max": 15
+    }
+   ]
+  },
+  {
+   "id": "thoracic",
+   "bone": "chest",
+   "dofs": [
+    {
+     "name": "flex",
+     "axis": "x",
+     "sign": 1,
+     "min": -20,
+     "max": 35
+    },
+    {
+     "name": "lat",
+     "axis": "z",
+     "sign": -1,
+     "min": -20,
+     "max": 20
+    },
+    {
+     "name": "rot",
+     "axis": "y",
+     "sign": 1,
+     "min": -35,
+     "max": 35
+    }
+   ]
+  },
+  {
+   "id": "neck",
+   "bone": "neck",
+   "dofs": [
+    {
+     "name": "flex",
+     "axis": "x",
+     "sign": 1,
+     "min": -45,
+     "max": 45
+    },
+    {
+     "name": "lat",
+     "axis": "z",
+     "sign": -1,
+     "min": -35,
+     "max": 35
+    },
+    {
+     "name": "rot",
+     "axis": "y",
+     "sign": 1,
+     "min": -70,
+     "max": 70
+    }
+   ]
+  },
+  {
+   "id": "atlas",
+   "bone": "head",
+   "dofs": [
+    {
+     "name": "flex",
+     "axis": "x",
+     "sign": 1,
+     "min": -20,
+     "max": 20
+    }
+   ]
+  },
+  {
+   "id": "sc_L",
+   "bone": "clavicle_L",
+   "dofs": [
+    {
+     "name": "elev",
+     "axis": "z",
+     "sign": 1,
+     "min": -10,
+     "max": 40
+    },
+    {
+     "name": "protr",
+     "axis": "y",
+     "sign": -1,
+     "min": -25,
+     "max": 25
+    }
+   ]
+  },
+  {
+   "id": "shoulder_L",
+   "bone": "upperarm_L",
+   "dofs": [
+    {
+     "name": "flex",
+     "axis": "x",
+     "sign": -1,
+     "min": -60,
+     "max": 180
+    },
+    {
+     "name": "abd",
+     "axis": "z",
+     "sign": 1,
+     "min": -30,
+     "max": 180
+    },
+    {
+     "name": "rot",
+     "axis": "y",
+     "sign": -1,
+     "min": -80,
+     "max": 70
+    }
+   ]
+  },
+  {
+   "id": "elbow_L",
+   "bone": "forearm_L",
+   "dofs": [
+    {
+     "name": "flex",
+     "axis": "x",
+     "sign": -1,
+     "min": 0,
+     "max": 150
+    },
+    {
+     "name": "pron",
+     "axis": "y",
+     "sign": -1,
+     "min": -80,
+     "max": 80
+    }
+   ]
+  },
+  {
+   "id": "wrist_L",
+   "bone": "hand_L",
+   "dofs": [
+    {
+     "name": "flex",
+     "axis": "z",
+     "sign": -1,
+     "min": -70,
+     "max": 80
+    },
+    {
+     "name": "dev",
+     "axis": "x",
+     "sign": -1,
+     "min": -30,
+     "max": 20
+    }
+   ]
+  },
+  {
+   "id": "hip_L",
+   "bone": "thigh_L",
+   "dofs": [
+    {
+     "name": "flex",
+     "axis": "x",
+     "sign": -1,
+     "min": -25,
+     "max": 125
+    },
+    {
+     "name": "abd",
+     "axis": "z",
+     "sign": 1,
+     "min": -30,
+     "max": 50
+    },
+    {
+     "name": "rot",
+     "axis": "y",
+     "sign": -1,
+     "min": -40,
+     "max": 45
+    }
+   ]
+  },
+  {
+   "id": "knee_L",
+   "bone": "shin_L",
+   "dofs": [
+    {
+     "name": "flex",
+     "axis": "x",
+     "sign": 1,
+     "min": 0,
+     "max": 145
+    }
+   ]
+  },
+  {
+   "id": "ankle_L",
+   "bone": "foot_L",
+   "dofs": [
+    {
+     "name": "dorsi",
+     "axis": "x",
+     "sign": -1,
+     "min": -50,
+     "max": 30
+    },
+    {
+     "name": "inv",
+     "axis": "z",
+     "sign": -1,
+     "min": -20,
+     "max": 30
+    }
+   ]
+  },
+  {
+   "id": "toe_L",
+   "bone": "toes_L",
+   "dofs": [
+    {
+     "name": "ext",
+     "axis": "x",
+     "sign": -1,
+     "min": -30,
+     "max": 80
+    }
+   ]
+  },
+  {
+   "id": "sc_R",
+   "bone": "clavicle_R",
+   "dofs": [
+    {
+     "name": "elev",
+     "axis": "z",
+     "sign": -1,
+     "min": -10,
+     "max": 40
+    },
+    {
+     "name": "protr",
+     "axis": "y",
+     "sign": 1,
+     "min": -25,
+     "max": 25
+    }
+   ]
+  },
+  {
+   "id": "shoulder_R",
+   "bone": "upperarm_R",
+   "dofs": [
+    {
+     "name": "flex",
+     "axis": "x",
+     "sign": -1,
+     "min": -60,
+     "max": 180
+    },
+    {
+     "name": "abd",
+     "axis": "z",
+     "sign": -1,
+     "min": -30,
+     "max": 180
+    },
+    {
+     "name": "rot",
+     "axis": "y",
+     "sign": 1,
+     "min": -80,
+     "max": 70
+    }
+   ]
+  },
+  {
+   "id": "elbow_R",
+   "bone": "forearm_R",
+   "dofs": [
+    {
+     "name": "flex",
+     "axis": "x",
+     "sign": -1,
+     "min": 0,
+     "max": 150
+    },
+    {
+     "name": "pron",
+     "axis": "y",
+     "sign": 1,
+     "min": -80,
+     "max": 80
+    }
+   ]
+  },
+  {
+   "id": "wrist_R",
+   "bone": "hand_R",
+   "dofs": [
+    {
+     "name": "flex",
+     "axis": "z",
+     "sign": 1,
+     "min": -70,
+     "max": 80
+    },
+    {
+     "name": "dev",
+     "axis": "x",
+     "sign": -1,
+     "min": -30,
+     "max": 20
+    }
+   ]
+  },
+  {
+   "id": "hip_R",
+   "bone": "thigh_R",
+   "dofs": [
+    {
+     "name": "flex",
+     "axis": "x",
+     "sign": -1,
+     "min": -25,
+     "max": 125
+    },
+    {
+     "name": "abd",
+     "axis": "z",
+     "sign": -1,
+     "min": -30,
+     "max": 50
+    },
+    {
+     "name": "rot",
+     "axis": "y",
+     "sign": 1,
+     "min": -40,
+     "max": 45
+    }
+   ]
+  },
+  {
+   "id": "knee_R",
+   "bone": "shin_R",
+   "dofs": [
+    {
+     "name": "flex",
+     "axis": "x",
+     "sign": 1,
+     "min": 0,
+     "max": 145
+    }
+   ]
+  },
+  {
+   "id": "ankle_R",
+   "bone": "foot_R",
+   "dofs": [
+    {
+     "name": "dorsi",
+     "axis": "x",
+     "sign": -1,
+     "min": -50,
+     "max": 30
+    },
+    {
+     "name": "inv",
+     "axis": "z",
+     "sign": 1,
+     "min": -20,
+     "max": 30
+    }
+   ]
+  },
+  {
+   "id": "toe_R",
+   "bone": "toes_R",
+   "dofs": [
+    {
+     "name": "ext",
+     "axis": "x",
+     "sign": -1,
+     "min": -30,
+     "max": 80
+    }
+   ]
+  }
+ ]
+}

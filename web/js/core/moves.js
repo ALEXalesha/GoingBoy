@@ -104,6 +104,7 @@
       ground: ['hand_L', 'hand_R', 'foot_L', 'toes_L', 'foot_R', 'toes_R'],
       level: [['hand_L', 'hand_R'], ['foot_L', 'toes_L', 'foot_R', 'toes_R']],
       pin: { bones: ['hand_L', 'hand_R'], at: [0, 0.3] },
+      support: [['hand_L', 'hand_R'], ['foot_L', 'toes_L', 'foot_R', 'toes_R']],
       base: both({ 'root.pitch': 75, 'toe_*.ext': 55, 'ankle_*.dorsi': 5, 'neck.flex': -15, 'hip_*.abd': 4 }),
       keys: [
         { t: 0.0, j: both({ 'shoulder_*.flex': 78, 'shoulder_*.abd': 12, 'elbow_*.flex': 2, 'shoulder_*.rot': 0 }) },
@@ -119,12 +120,12 @@
       hang: { bar: [0, 2.3, 0], grip: ['hand_L', 'hand_R'] },
       base: both({ 'hip_*.flex': 12, 'knee_*.flex': 35, 'ankle_*.dorsi': -25, 'wrist_*.flex': 0 }),
       keys: [
-        { t: 0.0, j: both({ 'shoulder_*.flex': 168, 'shoulder_*.abd': 10, 'elbow_*.flex': 4, 'sc_*.elev': 25, 'neck.flex': -10 }) },
-        { t: 0.1, j: both({ 'shoulder_*.flex': 168, 'shoulder_*.abd': 10, 'elbow_*.flex': 4, 'sc_*.elev': 25 }) },
-        { t: 0.3, j: both({ 'shoulder_*.flex': 125, 'shoulder_*.abd': 8, 'elbow_*.flex': 70, 'sc_*.elev': 10 }) },
+        { t: 0.0, j: both({ 'shoulder_*.flex': 168, 'shoulder_*.abd': 32, 'elbow_*.flex': 4, 'sc_*.elev': 25, 'neck.flex': -10 }) },
+        { t: 0.1, j: both({ 'shoulder_*.flex': 168, 'shoulder_*.abd': 32, 'elbow_*.flex': 4, 'sc_*.elev': 25 }) },
+        { t: 0.3, j: both({ 'shoulder_*.flex': 125, 'shoulder_*.abd': 18, 'elbow_*.flex': 70, 'sc_*.elev': 10 }) },
         { t: 0.48, j: both({ 'shoulder_*.flex': 45, 'shoulder_*.abd': 6, 'elbow_*.flex': 140, 'sc_*.elev': -5, 'neck.flex': -20 }) },
         { t: 0.58, j: both({ 'shoulder_*.flex': 45, 'shoulder_*.abd': 6, 'elbow_*.flex': 140, 'sc_*.elev': -5, 'neck.flex': -20 }) },
-        { t: 0.85, j: both({ 'shoulder_*.flex': 160, 'shoulder_*.abd': 10, 'elbow_*.flex': 10, 'sc_*.elev': 20, 'neck.flex': -10 }) },
+        { t: 0.85, j: both({ 'shoulder_*.flex': 160, 'shoulder_*.abd': 28, 'elbow_*.flex': 10, 'sc_*.elev': 20, 'neck.flex': -10 }) },
       ],
     },
     // ---------------- выпад на месте: левая нога впереди, правая на носке сзади, таз вниз ----------------

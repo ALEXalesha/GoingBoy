@@ -1,0 +1,40 @@
+# Демка на GitHub Pages: https://alexalesha.github.io/GoingBoy/ (Pages включает владелец).
+#
+# web/ - весь сайт как есть: обычные скрипты, three.js лежит в web/vendor, без сборки и без
+# npm install. Те же файлы работают в Electron и с локального диска.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy the page
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Lay out the site
+        run: |
+          mkdir -p _site
+          cp -r web/. _site/
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v5

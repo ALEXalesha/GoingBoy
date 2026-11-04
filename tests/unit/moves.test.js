@@ -98,6 +98,18 @@ for (const mv of compiled) {
     });
   }
 
+  if (mv.def.support) {
+    test(`${mv.id}: все опоры на полу (${mv.def.support.map((g) => g.join('+')).join(', ')})`, () => {
+      poses.forEach((p, i) => {
+        const f = K.fk(p);
+        for (const g of mv.def.support) {
+          const low = K.lowest(f, g.map((n) => S.BONE[n].index));
+          assert.ok(low < 0.01, `кадр ${i}: ${g.join('+')} в ${(low * 100).toFixed(1)} см над полом`);
+        }
+      });
+    });
+  }
+
   if (mv.def.swing) {
     test(`${mv.id}: маховая стопа не цепляет пол`, () => {
       const windows = mv.def.swing.flatMap(([side, a, b]) => (mv.def.half ? [[side, a, b], [side === 'L' ? 'R' : 'L', a + 0.5, b + 0.5]] : [[side, a, b]]));
@@ -134,6 +146,8 @@ for (const mv of compiled) {
         const m = A.gripMid(f, grip);
         if (mv.hang) {
           assert.ok(V.dist(m, mv.hang.bar) < 1e-3, `кадр ${i}: хват мимо перекладины`);
+          const g = grip.map((b) => K.point(f, b, [0, -0.08, 0]));
+          assert.ok(Math.abs(g[0][0] - g[1][0]) > 0.3 && g[0][0] > 0, `кадр ${i}: хват уже 30 см или руки перекрещены`);
           assert.ok(Math.abs(K.com(f)[2] - mv.hang.bar[2]) < 0.01, `кадр ${i}: центр масс не под перекладиной`);
         } else {
           assert.ok(Math.hypot(m[0] - mv.pin.at[0], m[2] - mv.pin.at[1]) < 1e-3, `кадр ${i}: кисти скользят`);

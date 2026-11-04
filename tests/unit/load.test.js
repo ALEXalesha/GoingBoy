@@ -132,3 +132,31 @@ test('без опор (полёт) силы опор нулевые; случа�
   assert.equal(fl.contacts.length, 0);
   assert.deepEqual(Ld.contactForces([], [0, 100, 0], [0, 1, 0]), []);
 });
+
+test('опоры уравновешивают и силы, и моменты веса и инерции (резкий мах руками стоя)', () => {
+  const base = K.poseFrom({ j: { 'hip_L.abd': 6, 'hip_R.abd': 6 } });
+  base.root.pos[1] -= K.lowest(K.fk(base));
+  const swing = (deg) => { const p = K.clone(base); for (const s of ['L', 'R']) K.set(p, `shoulder_${s}.flex`, 60 + deg); return p; };
+  const h = 0.03;
+  // руки разгоняются вперёд-вверх: угловое ускорение ~40 рад/с² (резкий, но живой мах)
+  const r = Ld.analyze({ prev: swing(-4), pose: swing(0), next: swing(6), h });
+  assert.ok(r.contacts.length >= 4, 'стоит на двух стопах');
+  // сумма сил и моментов (вокруг центра масс) опор и сил тяжести с инерцией = 0
+  const f = r.f;
+  const fp = K.fk(swing(-4)), fn = K.fk(swing(6));
+  let F = [0, 0, 0], Mo = [0, 0, 0];
+  for (let b = 0; b < S.BONES.length; b++) {
+    const m = S.BONES[b].mass * S.MASS;
+    if (!m) continue;
+    const c = K.segmentCom(f, b);
+    const acc = V.scale(V.add(V.sub(K.segmentCom(fn, b), V.scale(c, 2)), K.segmentCom(fp, b)), 1 / (h * h));
+    const Fi = V.scale(V.sub([0, -9.81, 0], acc), m);
+    F = V.add(F, Fi);
+    Mo = V.add(Mo, V.cross(V.sub(c, r.com), Fi));
+  }
+  const inertia = V.len(Mo);
+  assert.ok(inertia > 5, 'мах должен требовать заметного момента: ' + inertia);
+  for (const c of r.contacts) { F = V.add(F, c.force); Mo = V.add(Mo, V.cross(V.sub(c.point, r.com), c.force)); }
+  assert.ok(V.len(F) < 1, 'силы не уравновешены: ' + V.len(F));
+  assert.ok(V.len(Mo) < 1, 'моменты не уравновешены: ' + V.len(Mo).toFixed(2) + ' Н·м');
+});

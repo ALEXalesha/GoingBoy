@@ -8,7 +8,7 @@ const os = require('os');
 const path = require('path');
 const { ROOT, rng, SEED } = require('./helpers');
 
-const W = require(path.join(ROOT, 'electron', 'window-state.js'));
+const W = require(path.join(process.env.GB_ELECTRON || path.join(ROOT, 'electron'), 'window-state.js'));
 const OPTS = { width: 1280, height: 780, minWidth: 360, minHeight: 480 };
 const SCREENS = [{ x: 0, y: 0, width: 1920, height: 1040 }, { x: 1920, y: 0, width: 1280, height: 984 }];
 

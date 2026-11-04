@@ -1,0 +1,48 @@
+# Проверки на GitHub: законы ядра с покрытием по ветвям (порог в tools/coverage-check.js),
+# мутанты ядра, законы страницы в headless Chromium и настоящая программа Electron.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  core:
+    name: Laws, branch coverage, mutants
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ELECTRON_SKIP_BINARY_DOWNLOAD: "1"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - name: Dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Laws (node:test) with branch coverage thresholds
+        run: npm run coverage
+      - name: Every mutant is in place
+        run: node tools/mutate.js --check
+      - name: Core mutants are killed
+        run: GB_MUT='^(?!page-)' node tools/mutate.js
+
+  page:
+    name: Page and app (Playwright, Electron)
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - name: Dependencies
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Page in headless Chromium
+        run: npx playwright test --workers=1
+      - name: Electron app (20 launches without memory growth)
+        run: xvfb-run -a npx playwright test --config=playwright.app.config.js --workers=1

@@ -1,0 +1,15 @@
+{
+  "all": true,
+  "include": [
+    "web/js/core/**/*.js",
+    "web/js/body/skeleton.js",
+    "web/js/body/muscles.js",
+    "electron/window-state.js",
+    "web/js/body/retarget.js"
+  ],
+  "reporter": [
+    "text",
+    "json-summary"
+  ],
+  "reports-dir": "coverage"
+}
