@@ -33,7 +33,19 @@
 
   // ---------------- three.js ----------------
   const canvas = $('view');
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: true });
+  } catch (e) {
+    // без WebGL сцену не нарисовать: честное сообщение вместо пустого окна
+    I.setLang(settings.lang);
+    const msg = document.createElement('p');
+    msg.id = 'no-webgl';
+    msg.textContent = I.t('no_webgl');
+    $('stage').appendChild(msg);
+    GB.app = { state: () => ({ error: 'webgl' }) };
+    return;
+  }
   renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
   renderer.shadowMap.enabled = true;
   const scene = new THREE.Scene();
@@ -112,14 +124,15 @@
   });
 
   // ---------------- камера: вращение вокруг тела ----------------
-  const cam = { az: 0.6, el: 0.12, dist: 3.3, target: new THREE.Vector3(0, 0.95, 0) };
+  const cam = { az: 0.6, el: 0.12, dist: 3.3, fit: 1, target: new THREE.Vector3(0, 0.9, 0) };
+  let camInit = false;
   const CAM0 = { az: 0.6, el: 0.12, dist: 3.3 };
   function placeCamera() {
     cam.el = Math.max(-0.2, Math.min(1.35, cam.el));
     cam.dist = Math.max(1.4, Math.min(9, cam.dist));
     const c = Math.cos(cam.el);
     // в узком (книжном) окне камера отходит, чтобы тело влезало по ширине
-    const d = cam.dist * Math.max(1, 0.95 / camera.aspect);
+    const d = cam.dist * cam.fit * Math.max(1, 0.95 / camera.aspect);
     camera.position.set(cam.target.x + d * c * Math.sin(cam.az), cam.target.y + d * Math.sin(cam.el), cam.target.z + d * c * Math.cos(cam.az));
     camera.lookAt(cam.target);
   }
@@ -427,18 +440,23 @@
         items.push({ id: M.MUSCLES[mi].id, priority: a, anchor: toScreen(pts[Math.floor(pts.length / 2)]), html: `${I.muscle(M.MUSCLES[mi].id).name} <span class="pct">${pct(a)}</span>` });
       }
     }
-    // размеры подписей - по самим элементам
+    // ширина подписи - по свободному месту сбоку от тела (тогда она переносится в строки и
+    // встаёт в столбик), размеры - по самим элементам
+    lastBody = bodyRects(f);
+    const B = Lb.bounds(lastBody);
+    const room = Math.max(B.x, view.w - B.x - B.w) - Lb.GAP - Lb.MARGIN;
+    const maxW = Math.floor(room >= 110 ? Math.min(240, room) : Math.min(240, view.w - 2 * Lb.MARGIN));
     labelsBox.textContent = '';
     const els = items.map((it) => {
       const el = document.createElement('div');
       el.className = 'label';
       el.dataset.id = it.id;
+      el.style.maxWidth = maxW + 'px';
       el.innerHTML = it.html;
       labelsBox.appendChild(el);
-      it.w = el.offsetWidth; it.h = el.offsetHeight;
+      it.w = Math.ceil(el.getBoundingClientRect().width); it.h = Math.ceil(el.getBoundingClientRect().height);
       return el;
     });
-    lastBody = bodyRects(f);
     const placed = Lb.layout(view, lastBody, items.map((it) => ({ id: it.id, anchor: [it.anchor[0], it.anchor[1]], w: it.w, h: it.h, priority: it.priority })));
     let svg = '';
     items.forEach((it, k) => {
@@ -446,6 +464,9 @@
       if (!p) { els[k].remove(); return; }
       els[k].style.left = p.x + 'px';
       els[k].style.top = p.y + 'px';
+      // ровно тот размер, что раскладывали: у правого края текст не перенесётся иначе
+      els[k].style.width = p.w + 'px';
+      els[k].style.height = p.h + 'px';
       const ex = p.side === 'left' ? p.x + p.w : p.side === 'right' ? p.x : p.x + p.w / 2;
       const ey = p.side === 'band' ? (p.y < it.anchor[1] ? p.y + p.h : p.y) : p.y + p.h / 2;
       svg += `<line x1="${ex}" y1="${ey}" x2="${it.anchor[0]}" y2="${it.anchor[1]}"/><circle cx="${it.anchor[0]}" cy="${it.anchor[1]}" r="2.5"/>`;
@@ -580,11 +601,17 @@
     updateProps(pose, f);
     updateArcs(pose, f);
     if (mode === 'pose') handles.forEach((h) => h.position.set(...IK.effector(custom, h.userData.handle)));
-    // камера мягко следует за тазом (по горизонтали) и за центром масс по высоте
+    // камера мягко следует за центром масс по горизонтали и за серединой тела по высоте;
+    // высокое тело (вис на перекладине) - камера отходит
     const c = K.com(f);
-    cam.target.x += (c[0] - cam.target.x) * Math.min(1, dt * 3);
-    cam.target.z += (c[2] - cam.target.z) * Math.min(1, dt * 3);
-    cam.target.y += (Math.max(0.6, Math.min(1.5, c[1])) - cam.target.y) * Math.min(1, dt * 2);
+    let lo = Infinity, hi = -Infinity;
+    for (const q of K.capsules(f)) { lo = Math.min(lo, q.a[1] - q.r, q.b[1] - q.r); hi = Math.max(hi, q.a[1] + q.r, q.b[1] + q.r); }
+    const k = dt ? Math.min(1, dt * 3) : (camInit ? 0 : 1);
+    camInit = true;
+    cam.target.x += (c[0] - cam.target.x) * k;
+    cam.target.z += (c[2] - cam.target.z) * k;
+    cam.target.y += (Math.max(0.5, (lo + hi) / 2) - cam.target.y) * k;
+    cam.fit += (Math.max(1, (hi - Math.min(0, lo)) / 1.85) - cam.fit) * k;
     placeCamera();
     // беговая дорожка: пол едет под ногами со скоростью движения
     if (grid) grid.position.z = mode === 'move' && player.mv && player.mv.speed ? -((player.time * player.mv.speed) % GRID_CELL) : 0;
@@ -615,6 +642,7 @@
     setLang: (l) => { settings.lang = l; persist(); applyLang(); },
     setPhase: (ph) => { player.time = ph * player.mv.dur; player.fade = A.FADE; tick(0); },
     setCamera: (o) => { Object.assign(cam, o); tick(0); },
+    camera: () => ({ az: cam.az, el: cam.el, dist: cam.dist, pos: camera.position.toArray() }),
     hoverAt: (x, y) => { hover = pick(x, y); body.setHover(hover); tick(0); return hover; },
     setHover: (h) => { hover = h; body.setHover(h); tick(0); },
     tick: (dt = 0) => tick(dt),

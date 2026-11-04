@@ -126,6 +126,7 @@ button.icon { width: 30px; padding: 0; font-weight: 700; font-style: italic; dis
   background: var(--label-bg); border: 1px solid var(--glass-border); border-radius: 10px; padding: 6px 10px; max-width: calc(100% - 20px);
 }
 #pose-bar[hidden] { display: none; }
+#no-webgl { position: absolute; inset: 20% 10% auto; text-align: center; font-size: 16px; }
 #cam-hint { position: absolute; left: 10px; bottom: 8px; color: var(--text-dim); font-size: 12px; pointer-events: none; }
 
 #panel {

@@ -47,19 +47,26 @@
     return list.map((l, i) => ({ ...l, y: ys[i] }));
   }
 
-  /** Уложить подписи в полосу [y0, y1] по ширине окна слева направо по порядку якорей. */
+  /**
+   * Уложить подписи рядами в полосу [y0, y1] по ширине окна: сначала важные. Подпись, которая
+   * не влезает, пропускается - остальные всё равно укладываются. Возвращает [уложенные, остаток].
+   */
   function band(items, x0, x1, y0, y1) {
     const list = items.slice().sort((a, b) => b.priority - a.priority);
-    const out = [];
-    let x = x0, y = y0, rowH = 0;
+    const out = [], left = [];
+    const rows = []; // { y, h, x }
     for (const l of list) {
-      if (l.w > x1 - x0) continue;
-      if (x + l.w > x1) { x = x0; y += rowH + SPACE; rowH = 0; }
-      if (y + l.h > y1) break;
-      out.push({ ...l, x, y, side: 'band' });
-      x += l.w + SPACE; rowH = Math.max(rowH, l.h);
+      let row = rows.find((r) => r.x + l.w <= x1 && l.h <= r.h);
+      if (!row) {
+        const y = rows.length ? rows[rows.length - 1].y + rows[rows.length - 1].h + SPACE : y0;
+        if (l.w > x1 - x0 || y + l.h > y1) { left.push(l); continue; }
+        row = { y, h: l.h, x: x0 };
+        rows.push(row);
+      }
+      out.push({ ...l, x: row.x, y: row.y, side: 'band' });
+      row.x += l.w + SPACE;
     }
-    return out;
+    return [out, left];
   }
 
   /**
@@ -81,16 +88,19 @@
     const out = [];
     let colTop = top, colBottom = bottom;
     if (rest.length) {
-      // по бокам места нет: полоса над телом, если там больше места, иначе под ним;
-      // столбики тогда не заходят на высоту полосы
-      const above = B.y - GAP - MARGIN, below = view.h - MARGIN - (B.y + B.h + GAP);
-      const placed = above >= below
-        ? band(rest, MARGIN, view.w - MARGIN, MARGIN, B.y - GAP)
-        : band(rest, MARGIN, view.w - MARGIN, B.y + B.h + GAP, view.h - MARGIN);
-      out.push(...placed);
-      if (placed.length) {
-        if (above >= below) colTop = Math.max(...placed.map((l) => l.y + l.h)) + SPACE;
-        else colBottom = Math.min(...placed.map((l) => l.y)) - SPACE;
+      // по бокам места нет: полосы над телом и под ним (сначала та, где места больше);
+      // столбики тогда не заходят на высоту полос
+      const above = { y0: MARGIN, y1: B.y - GAP }, below = { y0: B.y + B.h + GAP, y1: view.h - MARGIN };
+      const order = above.y1 - above.y0 >= below.y1 - below.y0 ? [above, below] : [below, above];
+      let todo = rest;
+      for (const bandArea of order) {
+        if (!todo.length || bandArea.y1 <= bandArea.y0) continue;
+        const [placed, left] = band(todo, MARGIN, view.w - MARGIN, bandArea.y0, bandArea.y1);
+        out.push(...placed);
+        todo = left;
+        if (!placed.length) continue;
+        if (bandArea === above) colTop = Math.max(colTop, Math.max(...placed.map((l) => l.y + l.h)) + SPACE);
+        else colBottom = Math.min(colBottom, Math.min(...placed.map((l) => l.y)) - SPACE);
       }
     }
     for (const l of stack(left, colTop, colBottom)) out.push({ ...l, x: B.x - GAP - l.w, side: 'left' });

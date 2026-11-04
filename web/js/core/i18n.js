@@ -43,6 +43,8 @@
     fps: ['к/с', 'fps'],
     floor_force: ['Опора', 'Support'],
     newton: ['Н', 'N'], nm: ['Н·м', 'N·m'],
+    no_webgl: ['Браузер не дал WebGL - без него трёхмерную сцену не нарисовать. Включите аппаратное ускорение или откройте в другом браузере.',
+      'The browser gave no WebGL, and the 3D scene cannot be drawn without it. Turn on hardware acceleration or try another browser.'],
   };
 
   // Мышцы: название и что делает (то же, что объявлено в body/muscles.js - act)

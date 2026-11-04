@@ -77,3 +77,26 @@ test('подписи: узкое окно - полосой над или под 
   assert.equal(Lb.layout(view, [], labels).length, 2);
   assert.equal(Lb.bounds([]), null);
 });
+
+test('подписи: слишком высокая подпись в полосе не мешает уложить остальные', () => {
+  const view = { w: 600, h: 480 };
+  const body = [{ x: 170, y: 90, w: 270, h: 360 }];   // сбоку места меньше любой подписи
+  const labels = [
+    { id: 'big', anchor: [300, 300], w: 240, h: 75, priority: 10 },
+    { id: 'a', anchor: [300, 200], w: 170, h: 26, priority: 1 },
+    { id: 'b', anchor: [300, 250], w: 170, h: 26, priority: 0.5 },
+  ];
+  const out = Lb.layout(view, body, labels);
+  check(view, body, out, 'полоса');
+  assert.deepEqual(out.map((l) => l.id).sort(), ['a', 'b']);
+});
+
+test('подписи: когда полоса сверху заполнена, остальные идут в полосу снизу', () => {
+  const view = { w: 600, h: 600 };
+  const body = [{ x: 170, y: 100, w: 270, h: 410 }];   // сверху 80 px, снизу 70 px
+  const labels = Array.from({ length: 7 }, (_, i) => ({ id: 'l' + i, anchor: [300, 150 + i * 40], w: 280, h: 26, priority: 7 - i }));
+  const out = Lb.layout(view, body, labels);
+  check(view, body, out, 'две полосы');
+  assert.equal(out.length, 7);
+  assert.ok(out.some((l) => l.y > 510) && out.some((l) => l.y < 100), 'и сверху, и снизу');
+});
